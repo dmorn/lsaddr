@@ -23,6 +23,7 @@ import (
 	"strings"
 	"net"
 	"fmt"
+	"regexp"
 
 	"gopkg.in/pipe.v2"
 	"github.com/booster-proj/lsaddr/lookup/internal"
@@ -43,37 +44,48 @@ func AppName(path string) (string, error) {
 
 // Pids returns the process identifiers associated with "app".
 func Pids(app string) []string {
-	p := pipe.Exec("pgrep", wrap(app, "\""))
+	p := pipe.Exec("pgrep", app)
 	output, err := pipe.Output(p)
 	if err != nil {
+		panic(err)
 		return []string{}
 	}
 
-	s := make([]string, len(output))
-	for i, _ := range output {
-		s[i] = string(output[i])
-	}
-	return s
+	var builder strings.Builder
+	builder.Write(output)
+
+	trimmed := strings.Trim(builder.String(), "\n")
+	return strings.Split(trimmed, "\n")
 }
 
+// NetFile represents the decoded content of a ``lsof'' output line.
 type NetFile struct {
 	Command string // command owning the file
-	Device string // ??
 	Src net.IP // source address
 	Dst net.IP // destination address
 	L3Proto string // UDP, TCP, ...
 }
 
-func OpenNetFiles(filter []string) ([]NetFile, error) {
-	grepArgs := []string{"-E", strings.Join(filter, "|")}
+// OpenNetFiles uses ``lsof'' to find the network files that are currently open,
+// filtering each line of ``lsof'' output using "s" as regular expression.
+// Pass an empty string to return the entire output.
+func OpenNetFiles(s string) ([]NetFile, error) {
+	rgx, err := regexp.Compile(s)
+	if err != nil {
+		return []NetFile{}, err
+	}
+
 	p := pipe.Line(
 		pipe.Exec("lsof", "-i", "-n"),
-		pipe.Exec("grep", grepArgs...),
+		pipe.Filter(func(line []byte) bool {
+			return rgx.Match(line)
+		}),
 	)
 	output, err := pipe.Output(p)
 	if err != nil {
 		return []NetFile{}, err
 	}
+
 
 	fmt.Printf("DEBUG: OpenNetFiles output:\n%s\n", output)
 

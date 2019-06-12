@@ -18,6 +18,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/booster-proj/lsaddr/lookup"
@@ -30,18 +31,18 @@ var rootCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := args[0]
-		fmt.Printf("App path: %v\n", path)
 		name, err := lookup.AppName(path)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "unable find app name: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("Name found: %v\n", name)
 
 		// Find process identifier associated with this app.
 		pids := lookup.Pids(name)
 
-		onf, err := lookup.OpenNetFiles(pids)
+		// Now find the associated open files.
+		rgx := strings.Join(pids, "|")
+		onf, err := lookup.OpenNetFiles(rgx)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "unable to find open network files for %s: %v\n", name, err)
 			os.Exit(1)
@@ -59,4 +60,3 @@ func Execute() {
 		os.Exit(1)
 	}
 }
-
