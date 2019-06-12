@@ -15,16 +15,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package lookup_test
+package internal_test
 
 import (
 	"testing"
 	"bytes"
 
-	"github.com/booster-proj/lsaddr/lookup"
+	"github.com/booster-proj/lsaddr/lookup/internal"
 )
 
-const infoPExample = `<?xml version="1.0" encoding="UTF-8"?>
+const infoExample = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
@@ -55,8 +55,8 @@ const infoPExample = `<?xml version="1.0" encoding="UTF-8"?>
 `
 
 func TestExtractAppName(t *testing.T) {
-	r := bytes.NewBufferString(infoPExample)
-	name, err := lookup.ExtractAppName(r)
+	r := bytes.NewBufferString(infoExample)
+	name, err := internal.ExtractAppName(r)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -65,3 +65,4 @@ func TestExtractAppName(t *testing.T) {
 		t.Fatalf("Unexpected name: found %s, wanted %s", name, exp)
 	}
 }
+

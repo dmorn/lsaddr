@@ -33,10 +33,21 @@ var rootCmd = &cobra.Command{
 		fmt.Printf("App path: %v\n", path)
 		name, err := lookup.AppName(path)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to lookup App name: %v\n", err)
+			fmt.Fprintf(os.Stderr, "unable find app name: %v\n", err)
 			os.Exit(1)
 		}
 		fmt.Printf("Name found: %v\n", name)
+
+		// Find process identifier associated with this app.
+		pids := lookup.Pids(name)
+
+		onf, err := lookup.OpenNetFiles(pids)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "unable to find open network files for %s: %v\n", name, err)
+			os.Exit(1)
+		}
+
+		fmt.Printf("Network Files: %v\n", onf)
 	},
 }
 

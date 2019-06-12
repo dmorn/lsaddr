@@ -18,13 +18,14 @@
 package lookup
 
 import (
-	"bytes"
-	"fmt"
-	"io"
 	"os"
 	"path/filepath"
+	"strings"
+	"net"
+	"fmt"
 
-	"howett.net/plist"
+	"gopkg.in/pipe.v2"
+	"github.com/booster-proj/lsaddr/lookup/internal"
 )
 
 // AppName finds the "BundeExecutable" identifier from "Info.plist" file
@@ -37,28 +38,49 @@ func AppName(path string) (string, error) {
 		return "", err
 	}
 	defer f.Close()
-	return ExtractAppName(f)
+	return internal.ExtractAppName(f)
 }
 
-// ExtractAppName is used to find the value of the "CFBundleExecutable" key.
-// "r" is expected to be an ".plist" encoded file.
-func ExtractAppName(r io.Reader) (string, error) {
-	rs, ok := r.(io.ReadSeeker)
-	if !ok {
-		var buf bytes.Buffer
-		if _, err := io.Copy(&buf, r); err != nil {
-			return "", err
-		}
-		fmt.Printf("Buffer length: %d\n", buf.Len())
-		rs = bytes.NewReader(buf.Bytes())
+// Pids returns the process identifiers associated with "app".
+func Pids(app string) []string {
+	p := pipe.Exec("pgrep", wrap(app, "\""))
+	output, err := pipe.Output(p)
+	if err != nil {
+		return []string{}
 	}
 
-	var data struct {
-		Name string `plist:"CFBundleExecutable"`
+	s := make([]string, len(output))
+	for i, _ := range output {
+		s[i] = string(output[i])
 	}
-	if err := plist.NewDecoder(rs).Decode(&data); err != nil {
-		return "", err
-	}
-
-	return data.Name, nil
+	return s
 }
+
+type NetFile struct {
+	Command string // command owning the file
+	Device string // ??
+	Src net.IP // source address
+	Dst net.IP // destination address
+	L3Proto string // UDP, TCP, ...
+}
+
+func OpenNetFiles(filter []string) ([]NetFile, error) {
+	grepArgs := []string{"-E", strings.Join(filter, "|")}
+	p := pipe.Line(
+		pipe.Exec("lsof", "-i", "-n"),
+		pipe.Exec("grep", grepArgs...),
+	)
+	output, err := pipe.Output(p)
+	if err != nil {
+		return []NetFile{}, err
+	}
+
+	fmt.Printf("DEBUG: OpenNetFiles output:\n%s\n", output)
+
+	return []NetFile{}, fmt.Errorf("not implemented yet")
+}
+
+func wrap(word, s string) string {
+	return fmt.Sprintf("%s%s%s", s, word, s)
+}
+
