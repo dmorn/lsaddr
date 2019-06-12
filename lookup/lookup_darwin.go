@@ -27,6 +27,9 @@ import (
 	"howett.net/plist"
 )
 
+// AppName finds the "BundeExecutable" identifier from "Info.plist" file
+// contained in the "Contents" subdirectory in "path".
+// "path" should point to the target app root directory.
 func AppName(path string) (string, error) {
 	info := filepath.Join(path, "Contents", "Info.plist")
 	f, err := os.Open(info)
@@ -34,10 +37,12 @@ func AppName(path string) (string, error) {
 		return "", err
 	}
 	defer f.Close()
-	return ExtractName(f)
+	return ExtractAppName(f)
 }
 
-func ExtractName(r io.Reader) (string, error) {
+// ExtractAppName is used to find the value of the "CFBundleExecutable" key.
+// "r" is expected to be an ".plist" encoded file.
+func ExtractAppName(r io.Reader) (string, error) {
 	rs, ok := r.(io.ReadSeeker)
 	if !ok {
 		var buf bytes.Buffer

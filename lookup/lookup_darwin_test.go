@@ -54,9 +54,9 @@ const infoPExample = `<?xml version="1.0" encoding="UTF-8"?>
 </plist>
 `
 
-func TestExtractName(t *testing.T) {
+func TestExtractAppName(t *testing.T) {
 	r := bytes.NewBufferString(infoPExample)
-	name, err := lookup.ExtractName(r)
+	name, err := lookup.ExtractAppName(r)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
