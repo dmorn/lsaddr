@@ -18,9 +18,9 @@
 package lookup
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
-	"fmt"
 	"strings"
 
 	"github.com/booster-proj/lsaddr/lookup/internal"
@@ -64,4 +64,3 @@ func appName(path string) (string, error) {
 	defer f.Close()
 	return internal.ExtractAppName(f)
 }
-

@@ -19,8 +19,8 @@ package lookup
 
 import (
 	"bytes"
-	"strings"
 	"regexp"
+	"strings"
 
 	"github.com/booster-proj/lsaddr/lookup/internal"
 	"gopkg.in/pipe.v2"

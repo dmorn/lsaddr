@@ -65,4 +65,3 @@ func TestExtractAppName(t *testing.T) {
 		t.Fatalf("Unexpected name: found %s, wanted %s", name, exp)
 	}
 }
-

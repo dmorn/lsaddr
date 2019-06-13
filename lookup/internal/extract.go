@@ -47,4 +47,3 @@ func ExtractAppName(r io.Reader) (string, error) {
 
 	return data.Name, nil
 }
-
