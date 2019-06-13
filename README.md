@@ -8,6 +8,7 @@ Note that this tool is under development, and we plan to make it as much portabl
 
 #### Supported OS
 - `macOS`
+- `linux`
 
 #### Dependencies
 ```
@@ -22,6 +23,12 @@ lsof version information:
     /dev warnings are disabled.
     Kernel ID check is disabled.
 ```
+## Installation
+- `go get -u github.com/booster-proj/lsaddr`
+- downloading the [downloader script](https://raw.githubusercontent.com/booster-proj/lsaddr/master/godownloader.sh) and executing it (you can also specify the version that you want to download as argument)
+- downloading your favourite release from the [releases section](https://github.com/booster-proj/lsaddr/releases)
+
+Big thanks to [goreleaser](https://github.com/goreleaser/goreleaser) and [godownloader](https://github.com/goreleaser/godownloader) which made the releasing process **FUN**! 🤩
 
 ## Usage
 The idea is to drag-and-drop you application to `lsaddr`, and it displays the network addresses that that app is using. We plan to make the output configurable, so it is easy to consume it from other programs, for example by allowing to specify output's encoding and fields.
