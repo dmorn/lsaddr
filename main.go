@@ -27,6 +27,6 @@ var (
 func main() {
 	cmd.Version = version
 	cmd.Commit = commit
-	cmd.BuildTime = buildTime
+	cmd.BuildTime = date
 	cmd.Execute()
 }
