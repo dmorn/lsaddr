@@ -3,7 +3,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/booster-proj/lsaddr)](https://goreportcard.com/report/github.com/booster-proj/lsaddr)
 [![Release](https://img.shields.io/github/release/booster-proj/lsaddr.svg)](https://github.com/booster-proj/lsaddr/releases/latest)
 
-### Notes
+## Before we start
 #### Supported OS
 - `macOS`
 - `linux`
