@@ -19,8 +19,6 @@ package lookup
 
 import (
 	"bytes"
-	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -29,6 +27,66 @@ import (
 	"github.com/booster-proj/lsaddr/lookup/internal"
 	"gopkg.in/pipe.v2"
 )
+
+// OpenNetFiles uses ``lsof'' to find the network files that are currently open,
+// filtering each line of ``lsof'' output using "s" as regular expression.
+// Pass an empty string to return the entire output.
+func OpenNetFiles(s string) ([]NetFile, error) {
+	empty := []NetFile{}
+	expr := s
+
+	if strings.HasSuffix(s, ".app") {
+		// we suppose that "s" points to the root directory
+		// of an application.
+		name, err := AppName(s)
+		if err != nil {
+			return empty, err
+		}
+		Logger.Printf("app name: %s, path: %s", name, s)
+
+		// Find process identifier associated with this app.
+		pids := Pids(name)
+
+		// Now find the associated open files.
+		expr = strings.Join(pids, "|")
+	}
+
+	rgx, err := regexp.Compile(expr)
+	if err != nil {
+		return empty, err
+	}
+	return openNetFiles(rgx)
+}
+
+func openNetFiles(rgx *regexp.Regexp) ([]NetFile, error) {
+	p := pipe.Line(
+		pipe.Exec("lsof", "-i", "-n", "-P"),
+		pipe.Filter(func(line []byte) bool {
+			return rgx.Match(line)
+		}),
+	)
+	output, err := pipe.Output(p)
+	if err != nil {
+		return []NetFile{}, err
+	}
+
+	buf := bytes.NewBuffer(output)
+	ll, err := internal.DecodeLsofOutput(buf)
+	if err != nil {
+		return []NetFile{}, err
+	}
+
+	onf := make([]NetFile, len(ll))
+	for i, v := range ll {
+		src, dst := v.UnmarshalName()
+		onf[i] = NetFile{
+			Command: v.Command,
+			Src:     src,
+			Dst:     dst,
+		}
+	}
+	return onf, nil
+}
 
 // AppName finds the "BundeExecutable" identifier from "Info.plist" file
 // contained in the "Contents" subdirectory in "path".
@@ -57,53 +115,4 @@ func Pids(app string) []string {
 
 	trimmed := strings.Trim(builder.String(), "\n")
 	return strings.Split(trimmed, "\n")
-}
-
-// NetFile contains some information obtained from a network file.
-type NetFile struct {
-	Command string   // command owning the file
-	Src     net.Addr // source address
-	Dst     net.Addr // destination address
-}
-
-func (f NetFile) String() string {
-	return fmt.Sprintf("{%s %v->%v}", f.Command, f.Src, f.Dst)
-}
-
-// OpenNetFiles uses ``lsof'' to find the network files that are currently open,
-// filtering each line of ``lsof'' output using "s" as regular expression.
-// Pass an empty string to return the entire output.
-func OpenNetFiles(s string) ([]NetFile, error) {
-	rgx, err := regexp.Compile(s)
-	if err != nil {
-		return []NetFile{}, err
-	}
-
-	p := pipe.Line(
-		pipe.Exec("lsof", "-i", "-n", "-P"),
-		pipe.Filter(func(line []byte) bool {
-			return rgx.Match(line)
-		}),
-	)
-	output, err := pipe.Output(p)
-	if err != nil {
-		return []NetFile{}, err
-	}
-
-	buf := bytes.NewBuffer(output)
-	ll, err := internal.DecodeLsofOutput(buf)
-	if err != nil {
-		return []NetFile{}, err
-	}
-
-	onf := make([]NetFile, len(ll))
-	for i, v := range ll {
-		src, dst := v.UnmarshalName()
-		onf[i] = NetFile{
-			Command: v.Command,
-			Src:     src,
-			Dst:     dst,
-		}
-	}
-	return onf, nil
 }

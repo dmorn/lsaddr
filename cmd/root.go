@@ -17,10 +17,9 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"io/ioutil"
 	"log"
-	"strings"
+	"os"
 
 	"github.com/booster-proj/lsaddr/lookup"
 	"github.com/spf13/cobra"
@@ -33,7 +32,7 @@ var debug bool
 var rootCmd = &cobra.Command{
 	Use:   "lsaddr",
 	Short: "Outputs IP addresses used by an application",
-	Long: `Outputs IP addresses used by an application. Pass the app's root folder as argument.`,
+	Long:  `Outputs IP addresses used by an application. Pass the app's root folder as argument.`,
 	Args:  cobra.ExactArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if !debug {
@@ -42,22 +41,10 @@ var rootCmd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		path := args[0]
-		name, err := lookup.AppName(path)
+		s := args[0]
+		onf, err := lookup.OpenNetFiles(s)
 		if err != nil {
-			Logger.Printf("unable find app name: %v\n", err)
-			os.Exit(1)
-		}
-		Logger.Printf("app name: %s, path: %s", name, path)
-
-		// Find process identifier associated with this app.
-		pids := lookup.Pids(name)
-
-		// Now find the associated open files.
-		rgx := strings.Join(pids, "|")
-		onf, err := lookup.OpenNetFiles(rgx)
-		if err != nil {
-			Logger.Printf("unable to find open network files for %s: %v\n", name, err)
+			Logger.Printf("unable to find open network files for %s: %v\n", s, err)
 			os.Exit(1)
 		}
 		Logger.Printf("# of open files: %d", len(onf))

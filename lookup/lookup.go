@@ -16,8 +16,21 @@
 package lookup
 
 import (
+	"fmt"
 	"log"
+	"net"
 	"os"
 )
 
 var Logger = log.New(os.Stderr, "[lookup] ", 0)
+
+// NetFile contains some information obtained from a network file.
+type NetFile struct {
+	Command string   // command owning the file
+	Src     net.Addr // source address
+	Dst     net.Addr // destination address
+}
+
+func (f NetFile) String() string {
+	return fmt.Sprintf("{%s %v->%v}", f.Command, f.Src, f.Dst)
+}

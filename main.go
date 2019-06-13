@@ -19,9 +19,9 @@ import "github.com/booster-proj/lsaddr/cmd"
 
 // Version and BuildTime are filled in during build by the Makefile
 var (
-	version   = "N/A"
-	commit    = "N/A"
-	date = "N/A"
+	version = "N/A"
+	commit  = "N/A"
+	date    = "N/A"
 )
 
 func main() {
