@@ -31,8 +31,8 @@ var debug bool
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "lsaddr",
-	Short: "Outputs IP addresses used by an application",
-	Long:  `Outputs IP addresses used by an application. Pass the app's root folder as argument.`,
+	Short: "Show a subset of all network addresses being used by the system",
+	Long:  usage,
 	Args:  cobra.ExactArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if !debug {
@@ -71,3 +71,19 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "print debug information to stderr")
 }
+
+const usage = `
+'lsaddr' takes the entire list of currently open network connections and filters it out
+using the argument provided, which can either be:
+
+- "*.app" (macOS): It will be recognised as the path leading to the root directory of
+an Application. The tool will then:
+	1. Extract the Application's CFBundleExecutable value
+	2. Use it to find the list of Pids associated with the program
+	3. Build a regular expression out of them
+
+- a regular expression: which will be used to filter out the list of open files. Each line that
+does not match against the regex will be discarded. On macOS, the list of open files is fetched
+using 'lsof -i -n -P'.
+Check out https://golang.org/pkg/regexp/ to learn how to properly format your regex.
+`
