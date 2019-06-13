@@ -9,4 +9,4 @@ build: main.go
 test:
 	go test ./...
 fmt:
-	gofmt -w .
+	gofmt -s -w .
