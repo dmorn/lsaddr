@@ -31,7 +31,9 @@ lsof version information:
 Big thanks to [goreleaser](https://github.com/goreleaser/goreleaser) and [godownloader](https://github.com/goreleaser/godownloader) which made the releasing process **FUN**! 🤩
 
 ## Usage
-The idea is to drag-and-drop you application to `lsaddr`, and it displays the network addresses that that app is using. We plan to make the output configurable, so it is easy to consume it from other programs, for example by allowing to specify output's encoding and fields.
+The idea is to easily filter the list of open network files of a specific application. The list is filtered with a regular expression: only
+the lines that match against it are kept, the others discarded. You can pass to `lsaddr` either directly the regex, or the root folder of the
+target app (supported only on macOS for now). Check out some examples:
 
 ```
 lsaddr (master) $ bin/lsaddr Spotify
@@ -42,6 +44,7 @@ lsaddr (master) $ bin/lsaddr Spotify
 192.168.0.61:49671->35.186.224.47:443
 192.168.0.61:49974->2.16.186.11:80
 ```
+Note: "Spotify" is used as a regular expression.
 ```
 lsaddr (master) $ bin/lsaddr /Applications/Spotify.app
 192.168.0.61:49973->2.16.106.146:80
@@ -51,6 +54,8 @@ lsaddr (master) $ bin/lsaddr /Applications/Spotify.app
 192.168.0.61:49671->35.186.224.47:443
 192.168.0.61:49974->2.16.186.11:80
 ```
+Note: "/Applications/Spotify.app" is used to find the application's name, then its
+process identifiers are used to build the regular expression.
 ```
 lsaddr (master) $ bin/lsaddr /Applications/Spotify.app --debug
 [lookup] app name: Spotify, path: /Applications/Spotify.app
