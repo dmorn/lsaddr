@@ -1,5 +1,5 @@
 # lsaddr
-List network addresses used by your apps
+[![GoDoc](https://godoc.org/github.com/booster-proj/lsaddr?status.svg)](https://godoc.org/github.com/booster-proj/lsaddr)
 
 ### Notes
 Note that this tool is under development, and we plan to make it as much portable as possible.
