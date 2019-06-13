@@ -5,3 +5,6 @@ build: main.go
 
 test:
 	go test ./...
+
+fmt:
+	gofmt -w .
