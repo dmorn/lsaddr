@@ -21,10 +21,13 @@ import (
 	"github.com/booster-proj/lsaddr/lookup"
 )
 
+// Encoder is a wrapper around the Encode function.
 type Encoder interface {
 	Encode([]lookup.NetFile) error
 }
 
+// NewCSV returns an Encoder implementation which encodes
+// in CSV format.
 func NewCSV(w io.Writer) Encoder {
 	return newCSVEncoder(w)
 }
