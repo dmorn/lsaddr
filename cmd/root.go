@@ -33,6 +33,7 @@ var debug bool
 var rootCmd = &cobra.Command{
 	Use:   "lsaddr",
 	Short: "Outputs IP addresses used by an application",
+	Long: `Outputs IP addresses used by an application. Pass the app's root folder as argument.`,
 	Args:  cobra.ExactArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		if !debug {
