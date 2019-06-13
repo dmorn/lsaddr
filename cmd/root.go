@@ -61,7 +61,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		if err := encoder.NewCSV(os.Stdout).Encode(filtered); err != nil {
-			Logger.Printf("unable to encode open network files: %v\n", s, err)
+			Logger.Printf("unable to encode open network files: %v\n", err)
 			os.Exit(1)
 		}
 	},
