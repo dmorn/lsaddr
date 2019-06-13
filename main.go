@@ -21,7 +21,7 @@ import "github.com/booster-proj/lsaddr/cmd"
 var (
 	version   = "N/A"
 	commit    = "N/A"
-	buildTime = "N/A"
+	date = "N/A"
 )
 
 func main() {
