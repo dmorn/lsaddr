@@ -18,15 +18,16 @@
 package lookup
 
 import (
+	"bytes"
+	"fmt"
+	"net"
 	"os"
 	"path/filepath"
-	"strings"
-	"net"
-	"fmt"
 	"regexp"
+	"strings"
 
-	"gopkg.in/pipe.v2"
 	"github.com/booster-proj/lsaddr/lookup/internal"
+	"gopkg.in/pipe.v2"
 )
 
 // AppName finds the "BundeExecutable" identifier from "Info.plist" file
@@ -58,12 +59,15 @@ func Pids(app string) []string {
 	return strings.Split(trimmed, "\n")
 }
 
-// NetFile represents the decoded content of a ``lsof'' output line.
+// NetFile contains some information obtained from a network file.
 type NetFile struct {
-	Command string // command owning the file
-	Src net.IP // source address
-	Dst net.IP // destination address
-	L3Proto string // UDP, TCP, ...
+	Command string   // command owning the file
+	Src     net.Addr // source address
+	Dst     net.Addr // destination address
+}
+
+func (f NetFile) String() string {
+	return fmt.Sprintf("{%s %v->%v}", f.Command, f.Src, f.Dst)
 }
 
 // OpenNetFiles uses ``lsof'' to find the network files that are currently open,
@@ -76,7 +80,7 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 	}
 
 	p := pipe.Line(
-		pipe.Exec("lsof", "-i", "-n"),
+		pipe.Exec("lsof", "-i", "-n", "-P"),
 		pipe.Filter(func(line []byte) bool {
 			return rgx.Match(line)
 		}),
@@ -86,13 +90,20 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 		return []NetFile{}, err
 	}
 
+	buf := bytes.NewBuffer(output)
+	ll, err := internal.DecodeLsofOutput(buf)
+	if err != nil {
+		return []NetFile{}, err
+	}
 
-	fmt.Printf("DEBUG: OpenNetFiles output:\n%s\n", output)
-
-	return []NetFile{}, fmt.Errorf("not implemented yet")
+	onf := make([]NetFile, len(ll))
+	for i, v := range ll {
+		src, dst := v.UnmarshalName()
+		onf[i] = NetFile{
+			Command: v.Command,
+			Src:     src,
+			Dst:     dst,
+		}
+	}
+	return onf, nil
 }
-
-func wrap(word, s string) string {
-	return fmt.Sprintf("%s%s%s", s, word, s)
-}
-

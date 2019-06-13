@@ -20,15 +20,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/booster-proj/lsaddr/lookup"
+	"github.com/spf13/cobra"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "lsaddr",
 	Short: "Outputs IP addresses used by an application",
-	Args: cobra.ExactArgs(1),
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		path := args[0]
 		name, err := lookup.AppName(path)
@@ -48,7 +48,12 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fmt.Printf("Network Files: %v\n", onf)
+		for _, v := range onf {
+			if v.Dst.String() == "" {
+				continue
+			}
+			fmt.Fprintf(os.Stdout, "%v\n", v)
+		}
 	},
 }
 
