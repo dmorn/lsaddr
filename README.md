@@ -4,8 +4,6 @@
 [![Release](https://img.shields.io/github/release/booster-proj/lsaddr.svg)](https://github.com/booster-proj/lsaddr/releases/latest)
 
 ### Notes
-Note that this tool is under development, and we plan to make it as much portable as possible.
-
 #### Supported OS
 - `macOS`
 - `linux`
