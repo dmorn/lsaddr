@@ -7,9 +7,10 @@ before:
     - go mod download
     - make test
 builds:
-  goos:
-    - darwin
-    - linux
+  -
+    goos:
+      - darwin
+      - linux
 sign:
   artifacts: checksum
 changelog:
