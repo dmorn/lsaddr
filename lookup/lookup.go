@@ -34,3 +34,19 @@ type NetFile struct {
 func (f NetFile) String() string {
 	return fmt.Sprintf("{%s %v->%v}", f.Command, f.Src, f.Dst)
 }
+
+// OpenNetFiles compiles a regular expression out of "s". Some manipulation
+// may be performed on "s" before it is compiled, depending on the hosting
+// operating system: on macOS for example, if "s" ends with ".app", it
+// will be trated as the root path to an application, otherwise "s" will be
+// compiled untouched.
+// It then uses `lsof` tool to find the list of open files, filtering the list
+// taking only the lines that match against the regular expression built.
+func OpenNetFiles(s string) ([]NetFile, error) {
+	rgx, err := buildRgx(s)
+	if err != nil {
+		return []NetFile{}, err
+	}
+
+	return openNetFiles(rgx)
+}

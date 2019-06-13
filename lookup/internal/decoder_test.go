@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin linux
 
 // Copyright © 2019 booster authors
 //
@@ -23,48 +23,6 @@ import (
 
 	"github.com/booster-proj/lsaddr/lookup/internal"
 )
-
-const infoExample = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>CFBundleExecutable</key>
-	<string>pico8</string>
-	<key>CFBundleGetInfoString</key>
-	<string>pico8</string>
-	<key>CFBundleIconFile</key>
-	<string>pico8.icns</string>
-	<key>CFBundleIdentifier</key>
-	<string>com.Lexaloffle.pico8</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>pico8</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>pico8</string>
-	<key>CFBundleSignature</key>
-	<string>????</string>
-	<key>CFBundleVersion</key>
-	<string>pico8</string>
-	<key>LSMinimumSystemVersion</key>
-	<string>10.1</string>
-</dict>
-</plist>
-`
-
-func TestExtractAppName(t *testing.T) {
-	r := bytes.NewBufferString(infoExample)
-	name, err := internal.ExtractAppName(r)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-	exp := "pico8"
-	if name != exp {
-		t.Fatalf("Unexpected name: found %s, wanted %s", name, exp)
-	}
-}
 
 func TestUnmarshalLsofLine(t *testing.T) {
 	line := "Spotify   11778 danielmorandini  128u  IPv4 0x25c5bf09993eff03      0t0  TCP 192.168.0.61:51291->35.186.224.47:https (ESTABLISHED)"

@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin linux
 
 // Copyright © 2019 booster authors
 //
@@ -19,48 +19,33 @@ package lookup
 
 import (
 	"bytes"
-	"os"
-	"path/filepath"
-	"regexp"
 	"strings"
+	"regexp"
 
 	"github.com/booster-proj/lsaddr/lookup/internal"
 	"gopkg.in/pipe.v2"
 )
 
-// OpenNetFiles uses ``lsof'' to find the network files that are currently open,
-// filtering each line of ``lsof'' output using "s" as regular expression.
-// Pass an empty string to return the entire output.
-func OpenNetFiles(s string) ([]NetFile, error) {
-	empty := []NetFile{}
-	expr := s
-
-	if strings.HasSuffix(s, ".app") {
-		// we suppose that "s" points to the root directory
-		// of an application.
-		name, err := AppName(s)
-		if err != nil {
-			return empty, err
-		}
-		Logger.Printf("app name: %s, path: %s", name, s)
-
-		// Find process identifier associated with this app.
-		pids := Pids(name)
-		if len(pids) == 0 {
-			return empty, nil
-		}
-
-		// Now find the associated open files.
-		expr = strings.Join(pids, "|")
+// buildRgx compiles a regular expression out of "s". Some manipulation
+// may be performed on "s" before it is compiled, depending on the hosting
+// operating system: on macOS for example, if "s" ends with ".app", it
+// will be trated as the root path to an application.
+func buildRgx(s string) (*regexp.Regexp, error) {
+	expr, err := prepareExpr(s)
+	if err != nil {
+		return nil, err
 	}
-
 	rgx, err := regexp.Compile(expr)
 	if err != nil {
-		return empty, err
+		return nil, err
 	}
-	return openNetFiles(rgx)
+
+	return rgx, nil
 }
 
+// openNetFiles uses ``lsof'' to find the list of open network files. It
+// then filters the result using "rgx": each line that does not match is
+// discarded.
 func openNetFiles(rgx *regexp.Regexp) ([]NetFile, error) {
 	p := pipe.Line(
 		pipe.Exec("lsof", "-i", "-n", "-P"),
@@ -91,22 +76,9 @@ func openNetFiles(rgx *regexp.Regexp) ([]NetFile, error) {
 	return onf, nil
 }
 
-// AppName finds the "BundeExecutable" identifier from "Info.plist" file
-// contained in the "Contents" subdirectory in "path".
-// "path" should point to the target app root directory.
-func AppName(path string) (string, error) {
-	info := filepath.Join(path, "Contents", "Info.plist")
-	f, err := os.Open(info)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-	return internal.ExtractAppName(f)
-}
-
-// Pids returns the process identifiers associated with "app".
-func Pids(app string) []string {
-	p := pipe.Exec("pgrep", app)
+// Pids returns the process identifiers of "proc".
+func Pids(proc string) []string {
+	p := pipe.Exec("pgrep", proc)
 	output, err := pipe.Output(p)
 	if err != nil {
 		Logger.Printf("%v", err)
