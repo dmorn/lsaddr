@@ -34,30 +34,38 @@ Big thanks to [goreleaser](https://github.com/goreleaser/goreleaser) and [godown
 The idea is to drag-and-drop you application to `lsaddr`, and it displays the network addresses that that app is using. We plan to make the output configurable, so it is easy to consume it from other programs, for example by allowing to specify output's encoding and fields.
 
 ```
- $ bin/lsaddr /Applications/Spotify.app
-{Spotify 192.168.0.61:59053->104.199.65.114:4070}
-{Spotify 192.168.0.61:60237->192.121.140.177:80}
-{Spotify 192.168.0.61:60566->35.186.224.53:443}
-{Spotify 192.168.0.61:59062->35.186.224.47:443}
-{Spotify 192.168.0.61:60938->151.101.12.246:443}
-{Spotify 192.168.0.61:60939->151.101.12.246:443}
-{Spotify 192.168.0.61:60943->151.101.12.246:443}
-{Spotify 192.168.0.61:60940->151.101.12.246:443}
-{Spotify 192.168.0.61:60941->151.101.12.246:443}
-{Spotify 192.168.0.61:60942->151.101.12.246:443}
-{Spotify 192.168.0.61:60944->151.101.12.246:443}
-{Spotify 192.168.0.61:60945->151.101.12.246:443}
-{Spotify 192.168.0.61:60946->151.101.12.246:443}
-{Spotify 192.168.0.61:60947->151.101.12.246:443}
-{Spotify 192.168.0.61:60949->151.101.12.246:443}
-{Spotify 192.168.0.61:60950->151.101.12.246:443}
-{Spotify 192.168.0.61:60951->151.101.12.246:443}
-{Spotify 192.168.0.61:60952->151.101.12.246:443}
-{Spotify 192.168.0.61:60953->151.101.12.246:443}
-{Spotify 192.168.0.61:60954->151.101.12.246:443}
-{Spotify 192.168.0.61:60955->151.101.12.246:443}
-{Spotify 192.168.0.61:60977->151.101.12.246:443}
-{Spotify 192.168.0.61:60957->151.101.12.246:443}
-{Spotify 192.168.0.61:60958->151.101.12.246:443}
-{Spotify 192.168.0.61:60959->151.101.12.246:443}
+lsaddr (master) $ bin/lsaddr Spotify
+192.168.0.61:49973->2.16.106.146:80
+192.168.0.61:49501->192.121.140.177:80
+192.168.0.61:49235->104.199.64.158:4070
+192.168.0.61:49252->35.186.224.53:443
+192.168.0.61:49671->35.186.224.47:443
+192.168.0.61:49974->2.16.186.11:80
 ```
+```
+lsaddr (master) $ bin/lsaddr /Applications/Spotify.app
+192.168.0.61:49973->2.16.106.146:80
+192.168.0.61:49501->192.121.140.177:80
+192.168.0.61:49235->104.199.64.158:4070
+192.168.0.61:49252->35.186.224.53:443
+192.168.0.61:49671->35.186.224.47:443
+192.168.0.61:49974->2.16.186.11:80
+```
+```
+lsaddr (master) $ bin/lsaddr /Applications/Spotify.app --debug
+[lookup] app name: Spotify, path: /Applications/Spotify.app
+[lsaddr] # of open files: 12
+[lsaddr] skipping open file: *:57621->
+[lsaddr] skipping open file: *:57621->
+[lsaddr] skipping open file: *:50086->
+192.168.0.61:49973->2.16.106.146:80
+192.168.0.61:49501->192.121.140.177:80
+[lsaddr] skipping open file: *:1900->
+[lsaddr] skipping open file: *:58304->
+[lsaddr] skipping open file: *:62516->
+192.168.0.61:49235->104.199.64.158:4070
+192.168.0.61:49252->35.186.224.53:443
+192.168.0.61:49671->35.186.224.47:443
+192.168.0.61:49974->2.16.186.11:80
+```
+Note: `--debug` information is printed to `stderr`, command's output to `stdout`.
