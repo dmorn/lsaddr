@@ -32,7 +32,7 @@ type NetFile struct {
 }
 
 func (f NetFile) String() string {
-	return fmt.Sprintf("{%s %v->%v}", f.Command, f.Src, f.Dst)
+	return fmt.Sprintf("%v->%v", f.Src, f.Dst)
 }
 
 // OpenNetFiles compiles a regular expression out of "s". Some manipulation
