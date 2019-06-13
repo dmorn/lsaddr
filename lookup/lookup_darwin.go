@@ -48,7 +48,7 @@ func Pids(app string) []string {
 	p := pipe.Exec("pgrep", app)
 	output, err := pipe.Output(p)
 	if err != nil {
-		panic(err)
+		Logger.Printf("%v", err)
 		return []string{}
 	}
 
