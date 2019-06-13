@@ -46,6 +46,9 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 
 		// Find process identifier associated with this app.
 		pids := Pids(name)
+		if len(pids) == 0 {
+			return empty, nil
+		}
 
 		// Now find the associated open files.
 		expr = strings.Join(pids, "|")
