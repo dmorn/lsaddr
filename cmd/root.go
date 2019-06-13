@@ -21,12 +21,14 @@ import (
 	"log"
 	"os"
 
+	"github.com/booster-proj/lsaddr/encoder"
 	"github.com/booster-proj/lsaddr/lookup"
 	"github.com/spf13/cobra"
 )
 
 var Logger = log.New(os.Stderr, "[lsaddr] ", 0)
 var debug bool
+var csv bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -49,12 +51,18 @@ var rootCmd = &cobra.Command{
 		}
 		Logger.Printf("# of open files: %d", len(onf))
 
+		filtered := make([]lookup.NetFile, 0, len(onf))
 		for _, v := range onf {
 			if v.Dst.String() == "" {
 				Logger.Printf("skipping open file: %v", v)
 				continue
 			}
-			fmt.Fprintf(os.Stdout, "%v\n", v)
+			filtered = append(filtered, v)
+		}
+
+		if err := encoder.NewCSV(os.Stdout).Encode(filtered); err != nil {
+			Logger.Printf("unable to encode open network files: %v\n", s, err)
+			os.Exit(1)
 		}
 	},
 }
@@ -70,6 +78,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "print debug information to stderr")
+	rootCmd.Flags().BoolVarP(&csv, "csv", "", true, "enable csv output encoding")
 }
 
 const usage = `
