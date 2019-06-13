@@ -35,40 +35,34 @@ target app (supported only on macOS for now). Check out some examples:
 
 ```
 lsaddr (master) $ bin/lsaddr Spotify
-192.168.0.61:49973->2.16.106.146:80
-192.168.0.61:49501->192.121.140.177:80
-192.168.0.61:49235->104.199.64.158:4070
-192.168.0.61:49252->35.186.224.53:443
-192.168.0.61:49671->35.186.224.47:443
-192.168.0.61:49974->2.16.186.11:80
+COMMAND,NET,SRC,DST
+Spotify,tcp,192.168.0.61:52439,104.199.64.103:4070
+Spotify,tcp,192.168.0.61:54902,35.186.224.53:443
+Spotify,tcp,192.168.0.61:52456,35.186.224.47:443
 ```
 Note: "Spotify" is used as a regular expression.
 ```
 lsaddr (master) $ bin/lsaddr /Applications/Spotify.app
-192.168.0.61:49973->2.16.106.146:80
-192.168.0.61:49501->192.121.140.177:80
-192.168.0.61:49235->104.199.64.158:4070
-192.168.0.61:49252->35.186.224.53:443
-192.168.0.61:49671->35.186.224.47:443
-192.168.0.61:49974->2.16.186.11:80
+COMMAND,NET,SRC,DST
+Spotify,tcp,192.168.0.61:52439,104.199.64.103:4070
+Spotify,tcp,192.168.0.61:54902,35.186.224.53:443
+Spotify,tcp,192.168.0.61:52456,35.186.224.47:443
 ```
 Note: "/Applications/Spotify.app" is used to find the application's name, then its
 process identifiers are used to build the regular expression.
 ```
 lsaddr (master) $ bin/lsaddr /Applications/Spotify.app --debug
 [lookup] app name: Spotify, path: /Applications/Spotify.app
-[lsaddr] # of open files: 12
+[lsaddr] # of open files: 9
 [lsaddr] skipping open file: *:57621->
 [lsaddr] skipping open file: *:57621->
-[lsaddr] skipping open file: *:50086->
-192.168.0.61:49973->2.16.106.146:80
-192.168.0.61:49501->192.121.140.177:80
+[lsaddr] skipping open file: *:53104->
 [lsaddr] skipping open file: *:1900->
-[lsaddr] skipping open file: *:58304->
-[lsaddr] skipping open file: *:62516->
-192.168.0.61:49235->104.199.64.158:4070
-192.168.0.61:49252->35.186.224.53:443
-192.168.0.61:49671->35.186.224.47:443
-192.168.0.61:49974->2.16.186.11:80
+[lsaddr] skipping open file: *:57313->
+[lsaddr] skipping open file: *:53592->
+COMMAND,NET,SRC,DST
+Spotify,tcp,192.168.0.61:52439,104.199.64.103:4070
+Spotify,tcp,192.168.0.61:54902,35.186.224.53:443
+Spotify,tcp,192.168.0.61:52456,35.186.224.47:443
 ```
 Note: `--debug` information is printed to `stderr`, command's output to `stdout`.
