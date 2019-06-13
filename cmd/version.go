@@ -13,20 +13,29 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package main
+package cmd
 
-import "github.com/booster-proj/lsaddr/cmd"
+import (
+	"fmt"
 
-// Version and BuildTime are filled in during build by the Makefile
-var (
-	version   = "N/A"
-	commit    = "N/A"
-	buildTime = "N/A"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	cmd.Version = version
-	cmd.Commit = commit
-	cmd.BuildTime = buildTime
-	cmd.Execute()
+var (
+	Version   = "N/A"
+	Commit    = "N/A"
+	BuildTime = "N/A"
+)
+
+// versionCmd represents the version command
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "print version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("Version: %s, Commit: %s, Built at: %s\n\n", Version, Commit, BuildTime)
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(versionCmd)
 }
