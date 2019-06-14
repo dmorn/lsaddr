@@ -23,7 +23,8 @@ import (
 	"github.com/booster-proj/lsaddr/lookup"
 )
 
-// TODO: doc
+// Flags used to configure which `lookup.NetFile` fields the encoder
+// will use to encode the filter.
 const (
 	Fdst = 1 << iota
 	Fsrc
@@ -31,7 +32,9 @@ const (
 	FstdFields = Fdst | Fsrc | Fport // initial values for standard encoder
 )
 
-// TODO: doc
+// BPFEncoder is an Encoder implementation which encodes `lookup.NetFiles`
+// using the BPF format.
+// The "Fields" field can be used to configure how the filter is composed.
 type BPFEncoder struct {
 	w      io.Writer
 	Fields int
@@ -43,7 +46,7 @@ func newBPFEncoder(w io.Writer) *BPFEncoder {
 	}
 }
 
-// TODO: doc
+// Encode encodes "l" into a bpf. A new line is added at the end.
 func (e *BPFEncoder) Encode(l []lookup.NetFile) error {
 	if e.Fields == 0 {
 		e.Fields = FstdFields
