@@ -16,21 +16,14 @@
 package encoder_test
 
 import (
-	"net"
 	"strings"
 	"testing"
 
 	"github.com/booster-proj/lsaddr/encoder"
-	"github.com/booster-proj/lsaddr/lookup"
 )
 
 func TestEncode_CSV(t *testing.T) {
-	// TODO: test test test
-	l := []lookup.NetFile{
-		{"foo", newUDPAddr("192.168.0.61:54104"), newUDPAddr("52.94.218.7:443")},
-		{"bar", newUDPAddr("[::1]:60051"), newUDPAddr("[::1]:60051")},
-	}
-
+	l := netFiles0
 	var w strings.Builder
 	if err := encoder.NewCSV(&w).Encode(l); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
@@ -38,17 +31,9 @@ func TestEncode_CSV(t *testing.T) {
 
 	expOut := `COMMAND,NET,SRC,DST
 foo,udp,192.168.0.61:54104,52.94.218.7:443
-bar,udp,[::1]:60051,[::1]:60051
+bar,udp,[::1]:60051,[::1]:60052
 `
 	if expOut != w.String() {
 		t.Fatalf("Unexpected output: wanted \"%s\", found \"%s\"", expOut, w.String())
 	}
-}
-
-func newUDPAddr(address string) net.Addr {
-	addr, err := net.ResolveUDPAddr("udp", address)
-	if err != nil {
-		panic(err)
-	}
-	return addr
 }

@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/booster-proj/lsaddr/encoder"
 	"github.com/booster-proj/lsaddr/lookup"
@@ -28,6 +29,7 @@ import (
 
 var Logger = log.New(os.Stderr, "[lsaddr] ", 0)
 var debug bool
+var encodingT string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -39,6 +41,13 @@ var rootCmd = &cobra.Command{
 		if !debug {
 			Logger = log.New(ioutil.Discard, "", 0)
 			lookup.Logger = log.New(ioutil.Discard, "", 0)
+		}
+	},
+	PreRun: func(cmd *cobra.Command, args []string) {
+		encodingT = strings.ToLower(encodingT)
+		if err := encoder.ValidateType(encodingT); err != nil {
+			fmt.Printf("%v\n", err)
+			os.Exit(1)
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
@@ -59,7 +68,18 @@ var rootCmd = &cobra.Command{
 			filtered = append(filtered, v)
 		}
 
-		if err := encoder.NewCSV(os.Stdout).Encode(filtered); err != nil {
+		var enc encoder.Encoder
+		switch encodingT {
+		case "csv":
+			enc = encoder.NewCSV(os.Stdout)
+		case "bpf":
+			e := encoder.NewBPF(os.Stdout)
+			// you can specify which NetFile fields are used to build the filter.
+			e.Fields = encoder.FstdFields
+			enc = e
+		}
+
+		if err := enc.Encode(filtered); err != nil {
 			Logger.Printf("unable to encode open network files: %v\n", err)
 			os.Exit(1)
 		}
@@ -77,6 +97,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "print debug information to stderr")
+	rootCmd.PersistentFlags().StringVarP(&encodingT, "encoding", "e", "csv", "choose output encoding: valid options are csv|bpf")
 }
 
 const usage = `

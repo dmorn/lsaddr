@@ -16,35 +16,39 @@
 package encoder
 
 import (
-	"encoding/csv"
+	"errors"
 	"io"
 
 	"github.com/booster-proj/lsaddr/lookup"
 )
 
-type CSVEncoder struct {
-	w *csv.Writer
+var AllowedEncoders = []string{"csv", "bpf"}
+
+// Encoder is a wrapper around the Encode function.
+type Encoder interface {
+	Encode([]lookup.NetFile) error
 }
 
-func newCSVEncoder(w io.Writer) *CSVEncoder {
-	return &CSVEncoder{
-		w: csv.NewWriter(w),
-	}
+// NewCSV returns an Encoder implementation which encodes
+// in CSV format.
+func NewCSV(w io.Writer) *CSVEncoder {
+	return newCSVEncoder(w)
 }
 
-func (e *CSVEncoder) Encode(l []lookup.NetFile) error {
-	header := []string{"COMMAND", "NET", "SRC", "DST"}
-	if err := e.w.Write(header); err != nil {
-		return err
-	}
+// NewBPF returns an Encoder implementation which encodes
+// in Berkeley Packet Filter format.
+func NewBPF(w io.Writer) *BPFEncoder {
+	return newBPFEncoder(w)
+}
 
-	for _, v := range l {
-		record := []string{v.Command, v.Src.Network(), v.Src.String(), v.Dst.String()}
-		if err := e.w.Write(record); err != nil {
-			return err
+// ValidateType returns an error if "s" does not point to
+// a valid encoder. See `AllowedEncoders` to find which values
+// are allowed.
+func ValidateType(s string) error {
+	for _, v := range AllowedEncoders {
+		if s == v {
+			return nil
 		}
 	}
-
-	e.w.Flush()
-	return e.w.Error()
+	return errors.New("unsupported encoding type " + s)
 }

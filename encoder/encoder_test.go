@@ -13,38 +13,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package encoder
+package encoder_test
 
 import (
-	"encoding/csv"
-	"io"
+	"net"
 
 	"github.com/booster-proj/lsaddr/lookup"
 )
 
-type CSVEncoder struct {
-	w *csv.Writer
+var netFiles0 = []lookup.NetFile{
+	{"foo", newUDPAddr("192.168.0.61:54104"), newUDPAddr("52.94.218.7:443")},
+	{"bar", newUDPAddr("[::1]:60051"), newUDPAddr("[::1]:60052")},
 }
 
-func newCSVEncoder(w io.Writer) *CSVEncoder {
-	return &CSVEncoder{
-		w: csv.NewWriter(w),
+func newUDPAddr(address string) net.Addr {
+	addr, err := net.ResolveUDPAddr("udp", address)
+	if err != nil {
+		panic(err)
 	}
-}
-
-func (e *CSVEncoder) Encode(l []lookup.NetFile) error {
-	header := []string{"COMMAND", "NET", "SRC", "DST"}
-	if err := e.w.Write(header); err != nil {
-		return err
-	}
-
-	for _, v := range l {
-		record := []string{v.Command, v.Src.Network(), v.Src.String(), v.Dst.String()}
-		if err := e.w.Write(record); err != nil {
-			return err
-		}
-	}
-
-	e.w.Flush()
-	return e.w.Error()
+	return addr
 }

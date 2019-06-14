@@ -13,21 +13,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package encoder
+package encoder_test
 
 import (
-	"io"
+	"strings"
+	"testing"
 
-	"github.com/booster-proj/lsaddr/lookup"
+	"github.com/booster-proj/lsaddr/encoder"
 )
 
-// Encoder is a wrapper around the Encode function.
-type Encoder interface {
-	Encode([]lookup.NetFile) error
-}
+func TestEncode_BPF(t *testing.T) {
+	l := netFiles0
+	var w strings.Builder
+	if err := encoder.NewBPF(&w).Encode(l); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
 
-// NewCSV returns an Encoder implementation which encodes
-// in CSV format.
-func NewCSV(w io.Writer) Encoder {
-	return newCSVEncoder(w)
+	expOut := "host 192.168.0.61 and port 54104 or host 52.94.218.7 and port 443 or host ::1 and port 60051 or host ::1 and port 60052\n"
+	if expOut != w.String() {
+		t.Fatalf("Unexpected output: wanted \"%s\", found \"%s\"", expOut, w.String())
+	}
 }
