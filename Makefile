@@ -6,6 +6,8 @@ VERSION_FLAGS    := -ldflags='-X "main.version=$(VERSION)" -X "main.commit=$(COM
 all: build
 build: main.go
 	go build -o bin/lsaddr $(VERSION_FLAGS)
+install: build
+	mv bin/lsaddr $(GOBIN)
 test:
 	go test ./...
 fmt:
