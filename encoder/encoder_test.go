@@ -13,21 +13,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package encoder
+package encoder_test
 
 import (
-	"io"
+	"net"
 
 	"github.com/booster-proj/lsaddr/lookup"
 )
 
-// Encoder is a wrapper around the Encode function.
-type Encoder interface {
-	Encode([]lookup.NetFile) error
+var netFiles0 = []lookup.NetFile{
+	{"foo", newUDPAddr("192.168.0.61:54104"), newUDPAddr("52.94.218.7:443")},
+	{"bar", newUDPAddr("[::1]:60051"), newUDPAddr("[::1]:60052")},
 }
 
-// NewCSV returns an Encoder implementation which encodes
-// in CSV format.
-func NewCSV(w io.Writer) Encoder {
-	return newCSVEncoder(w)
+func newUDPAddr(address string) net.Addr {
+	addr, err := net.ResolveUDPAddr("udp", address)
+	if err != nil {
+		panic(err)
+	}
+	return addr
 }

@@ -13,38 +13,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package encoder
+package encoder_test
 
 import (
-	"encoding/csv"
-	"io"
+	"strings"
+	"testing"
 
-	"github.com/booster-proj/lsaddr/lookup"
+	"github.com/booster-proj/lsaddr/encoder"
 )
 
-type CSVEncoder struct {
-	w *csv.Writer
-}
-
-func newCSVEncoder(w io.Writer) *CSVEncoder {
-	return &CSVEncoder{
-		w: csv.NewWriter(w),
-	}
-}
-
-func (e *CSVEncoder) Encode(l []lookup.NetFile) error {
-	header := []string{"COMMAND", "NET", "SRC", "DST"}
-	if err := e.w.Write(header); err != nil {
-		return err
+func TestEncode_BPF(t *testing.T) {
+	l := netFiles0
+	var w strings.Builder
+	if err := encoder.NewBPF(&w).Encode(l); err != nil {
+		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	for _, v := range l {
-		record := []string{v.Command, v.Src.Network(), v.Src.String(), v.Dst.String()}
-		if err := e.w.Write(record); err != nil {
-			return err
-		}
+	expOut := "host 192.168.0.61 port 54104 or host 52.94.218.7 port 443 or host ::1 port 60051 or host ::1 port 60052\n"
+	if expOut != w.String() {
+		t.Fatalf("Unexpected output: wanted \"%s\", found \"%s\"", expOut, w.String())
 	}
-
-	e.w.Flush()
-	return e.w.Error()
 }
