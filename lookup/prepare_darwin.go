@@ -31,17 +31,23 @@ import (
 // value of the app is searched, and used to build the an expression that will match
 // each string that contains a process identifer owned by the "target" app.
 func prepareExpr(s string) (string, error) {
-	if !strings.HasSuffix(s, ".app") {
+	if _, err := os.Stat(s); err != nil {
+		// this is not a path
+		return s, nil
+	}
+	path := strings.TrimRight(s, "/")
+	if !strings.HasSuffix(path, ".app") {
+		// it is a path, but not one that we know how to handle.
 		return s, nil
 	}
 
 	// we suppose that "s" points to the root directory
 	// of an application.
-	name, err := appName(s)
+	name, err := appName(path)
 	if err != nil {
 		return "", err
 	}
-	Logger.Printf("app name: %s, path: %s", name, s)
+	Logger.Printf("app name: %s, path: %s", name, path)
 
 	// Find process identifier associated with this app.
 	pids := Pids(name)
