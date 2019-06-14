@@ -104,7 +104,7 @@ func (e *bpfBuilder) buildAddr(addr string, fields int) (string, error) {
 
 	l = append(l, "host", host)
 	if fields&Fport != 0 {
-		l = append(l, "port", port)
+		l = append(l, "and", "port", port)
 	}
 	return strings.Join(l, " "), nil
 }
