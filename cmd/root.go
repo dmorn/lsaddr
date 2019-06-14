@@ -28,7 +28,6 @@ import (
 
 var Logger = log.New(os.Stderr, "[lsaddr] ", 0)
 var debug bool
-var csv bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -78,7 +77,6 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "print debug information to stderr")
-	rootCmd.Flags().BoolVarP(&csv, "csv", "", true, "enable csv output encoding")
 }
 
 const usage = `
