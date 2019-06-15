@@ -27,7 +27,7 @@ import (
 // using the BPF format.
 // The "Fields" field can be used to configure how the filter is composed.
 type BPFEncoder struct {
-	w      io.Writer
+	w io.Writer
 }
 
 func newBPFEncoder(w io.Writer) *BPFEncoder {
