@@ -69,14 +69,14 @@ type bpfBuilder struct {
 
 func (b *bpfBuilder) Or(f lookup.NetFile, fields int) error {
 	l := []string{}
-	if (fields & Fsrc) != 0 {
+	if fields&Fsrc != 0 {
 		i, err := b.buildAddr(f.Src.String(), fields)
 		if err != nil {
 			return err
 		}
 		l = append(l, i)
 	}
-	if (fields & Fdst) != 0 {
+	if fields&Fdst != 0 {
 		i, err := b.buildAddr(f.Dst.String(), fields)
 		if err != nil {
 			return err
