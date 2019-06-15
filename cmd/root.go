@@ -75,7 +75,9 @@ var rootCmd = &cobra.Command{
 		case "csv":
 			enc = encoder.NewCSV(w)
 		case "bpf":
-			enc = encoder.NewBPF(w)
+			e := encoder.NewBPF(w)
+			e.Fields = encoder.Fsrc | encoder.Fport
+			enc = e
 		}
 
 		if err := enc.Encode(filtered); err != nil {
