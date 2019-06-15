@@ -54,12 +54,11 @@ type bpfBuilder struct {
 }
 
 func (b *bpfBuilder) Or(f lookup.NetFile) error {
-	i, err := b.buildAddr(f.Src.String())
+	cur, err := b.buildAddr(f.Src.String())
 	if err != nil {
 		return err
 	}
 
-	cur := i
 	prev := b.String()
 	if prev != "" {
 		cur = strings.Join([]string{prev, cur}, " or ")
