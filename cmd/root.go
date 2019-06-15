@@ -71,13 +71,12 @@ var rootCmd = &cobra.Command{
 
 		var enc encoder.Encoder
 		w := bufio.NewWriter(os.Stdout)
+
 		switch encodingT {
 		case "csv":
 			enc = encoder.NewCSV(w)
 		case "bpf":
-			e := encoder.NewBPF(w)
-			e.Fields = encoder.Fsrc | encoder.Fport
-			enc = e
+			enc = encoder.NewBPF(w)
 		}
 
 		if err := enc.Encode(filtered); err != nil {
