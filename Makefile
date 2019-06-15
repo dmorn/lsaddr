@@ -10,5 +10,5 @@ install: build
 	mv bin/lsaddr $(GOBIN)
 test:
 	go test ./...
-fmt:
+format:
 	gofmt -s -w .

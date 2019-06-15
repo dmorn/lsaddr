@@ -16,6 +16,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -69,20 +70,19 @@ var rootCmd = &cobra.Command{
 		}
 
 		var enc encoder.Encoder
+		w := bufio.NewWriter(os.Stdout)
 		switch encodingT {
 		case "csv":
-			enc = encoder.NewCSV(os.Stdout)
+			enc = encoder.NewCSV(w)
 		case "bpf":
-			e := encoder.NewBPF(os.Stdout)
-			// you can specify which NetFile fields are used to build the filter.
-			e.Fields = encoder.FstdFields
-			enc = e
+			enc = encoder.NewBPF(w)
 		}
 
 		if err := enc.Encode(filtered); err != nil {
 			Logger.Printf("unable to encode open network files: %v\n", err)
 			os.Exit(1)
 		}
+		w.Flush()
 	},
 }
 
