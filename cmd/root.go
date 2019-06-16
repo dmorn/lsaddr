@@ -43,8 +43,7 @@ var rootCmd = &cobra.Command{
 			Logger = log.New(ioutil.Discard, "", 0)
 			lookup.Logger = log.New(ioutil.Discard, "", 0)
 		}
-	},
-	PreRun: func(cmd *cobra.Command, args []string) {
+
 		encodingT = strings.ToLower(encodingT)
 		if err := encoder.ValidateType(encodingT); err != nil {
 			fmt.Printf("%v\n", err)

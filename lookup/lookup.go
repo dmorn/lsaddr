@@ -16,7 +16,6 @@
 package lookup
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"os"
@@ -29,10 +28,6 @@ type NetFile struct {
 	Command string   // command owning the file
 	Src     net.Addr // source address
 	Dst     net.Addr // destination address
-}
-
-func (f NetFile) String() string {
-	return fmt.Sprintf("%v->%v", f.Src, f.Dst)
 }
 
 // OpenNetFiles compiles a regular expression out of "s". Some manipulation
@@ -50,3 +45,4 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 
 	return openNetFiles(rgx)
 }
+
