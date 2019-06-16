@@ -45,4 +45,3 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 
 	return openNetFiles(rgx)
 }
-
