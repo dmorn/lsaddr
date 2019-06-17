@@ -38,43 +38,28 @@ func newBPFEncoder(w io.Writer) *BPFEncoder {
 
 // Encode encodes "l" into a bpf. A new line is added at the end.
 func (e *BPFEncoder) Encode(l []lookup.NetFile) error {
-	var builder bpfBuilder
+	// find all destinations
+	hosts := make(map[string]bool) // using a map to avoid duplicates
 	for _, v := range l {
-		if err := builder.Or(v); err != nil {
+		host, _, err := net.SplitHostPort(v.Dst.String())
+		if err != nil {
 			return err
 		}
+
+		hosts[host] = true
 	}
-	r := strings.NewReader(builder.String() + "\n")
+
+	hostsL := make([]string, 0, len(hosts))
+	for k := range hosts {
+		hostsL = append(hostsL, k)
+	}
+
+	var b strings.Builder
+	b.WriteString("host ")
+	b.WriteString(strings.Join(hostsL, " or "))
+	b.WriteString("\n")
+
+	r := strings.NewReader(b.String())
 	_, err := io.Copy(e.w, r)
 	return err
-}
-
-type bpfBuilder struct {
-	strings.Builder
-}
-
-func (b *bpfBuilder) Or(f lookup.NetFile) error {
-	cur, err := b.buildAddr(f.Src.String())
-	if err != nil {
-		return err
-	}
-
-	prev := b.String()
-	if prev != "" {
-		cur = strings.Join([]string{prev, cur}, " or ")
-	}
-
-	b.Reset()
-	_, err = b.Write([]byte(cur))
-	return err
-}
-
-func (e *bpfBuilder) buildAddr(addr string) (string, error) {
-	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		return "", err
-	}
-
-	l := []string{"host", host, "and", "port", port}
-	return strings.Join(l, " "), nil
 }

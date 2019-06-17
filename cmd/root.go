@@ -30,7 +30,7 @@ import (
 
 var Logger = log.New(os.Stderr, "[lsaddr] ", 0)
 var debug bool
-var encodingT string
+var output string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -44,8 +44,8 @@ var rootCmd = &cobra.Command{
 			lookup.Logger = log.New(ioutil.Discard, "", 0)
 		}
 
-		encodingT = strings.ToLower(encodingT)
-		if err := encoder.ValidateType(encodingT); err != nil {
+		output = strings.ToLower(output)
+		if err := encoder.ValidateType(output); err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}
@@ -71,7 +71,7 @@ var rootCmd = &cobra.Command{
 		var enc encoder.Encoder
 		w := bufio.NewWriter(os.Stdout)
 
-		switch encodingT {
+		switch output {
 		case "csv":
 			enc = encoder.NewCSV(w)
 		case "bpf":
@@ -97,7 +97,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "print debug information to stderr")
-	rootCmd.PersistentFlags().StringVarP(&encodingT, "encoding", "e", "csv", "choose output encoding: valid options are csv|bpf")
+	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "bpf", "choose output type, such as a \"csv\" list or a \"bpf\" which will match packets coming/going to the addresses found")
 }
 
 const usage = `

@@ -29,7 +29,7 @@ func TestEncode_BPF(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	expOut := "host 192.168.0.61 and port 54104 or host ::1 and port 60051\n"
+	expOut := "host 52.94.218.7 or ::1\n"
 	if expOut != w.String() {
 		t.Fatalf("Unexpected output: wanted \"%s\", found \"%s\"", expOut, w.String())
 	}
