@@ -71,4 +71,4 @@ lsaddr (master) $ bin/lsaddr /Applications/Spotify.app/ -e=bpf
 host 192.168.0.61 and port 59370 or host 104.199.65.10 and port 4070 or host 192.168.0.61 and port 59392 or host 35.186.224.47 and port 443 or host 192.168.0.61 and port 64225 or host 35.186.224.53 and port 443
 ```
 Note: you can encode the output either in csv or as a [bpf](https://en.wikipedia.org/wiki/Berkeley_Packet_Filter) (hint: very useful for packet capturing tools)
-Note 2: only "src" information is used to build the filter, as it will be used to match both "src" and "dst" fields on the actual packet (teoretically, see #3)
+Note 2: only "src" information is used to build the filter, as it will be used to match both "src" and "dst" fields on the actual packet (teoretically, see [issue #5](https://github.com/booster-proj/lsaddr/issues/5))
