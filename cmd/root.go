@@ -1,5 +1,4 @@
-// Copyright © 2019 booster authors
-//
+// Copyright © 2019 booster authors 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -21,6 +20,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"io"
 	"strings"
 
 	"github.com/booster-proj/lsaddr/encoder"
@@ -45,41 +45,23 @@ var rootCmd = &cobra.Command{
 		}
 
 		output = strings.ToLower(output)
-		if err := encoder.ValidateType(output); err != nil {
+		if err := validateOutput(output); err != nil {
 			fmt.Printf("%v\n", err)
 			os.Exit(1)
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		s := args[0]
-		onf, err := lookup.OpenNetFiles(s)
+		ff, err := lookup.OpenNetFiles(s)
 		if err != nil {
 			Logger.Printf("unable to find open network files for %s: %v\n", s, err)
 			os.Exit(1)
 		}
-		Logger.Printf("# of open files: %d", len(onf))
+		Logger.Printf("# of open files: %d", len(ff))
 
-		filtered := make([]lookup.NetFile, 0, len(onf))
-		for _, v := range onf {
-			if v.Dst.String() == "" {
-				Logger.Printf("skipping open file: %v", v)
-				continue
-			}
-			filtered = append(filtered, v)
-		}
-
-		var enc encoder.Encoder
 		w := bufio.NewWriter(os.Stdout)
-
-		switch output {
-		case "csv":
-			enc = encoder.NewCSV(w)
-		case "bpf":
-			enc = encoder.NewBPF(w)
-		}
-
-		if err := enc.Encode(filtered); err != nil {
-			Logger.Printf("unable to encode open network files: %v\n", err)
+		if err := writeOutputTo(w, output, ff); err != nil {
+			Logger.Printf("unable to write output: %v", err)
 			os.Exit(1)
 		}
 		w.Flush()
@@ -97,7 +79,26 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "print debug information to stderr")
-	rootCmd.PersistentFlags().StringVarP(&output, "output", "o", "bpf", "choose output type, such as a \"csv\" list or a \"bpf\" which will match packets coming/going to the addresses found")
+	rootCmd.PersistentFlags().StringVarP(&output, "out", "o", "bpf", "select output produced")
+}
+
+func writeOutputTo(w io.Writer, output string, ff []lookup.NetFile) error {
+	switch output {
+	case "csv":
+		return encoder.NewCSV(w).Encode(ff)
+	case "bpf":
+		return nil
+	}
+	return nil
+}
+
+func validateOutput(output string) error {
+	switch output {
+	case "csv", "bpf":
+		return nil
+	default:
+		return fmt.Errorf("unrecognised output %s", output)
+	}
 }
 
 const usage = `
@@ -114,4 +115,11 @@ an Application. The tool will then:
 does not match against the regex will be discarded. On macOS, the list of open files is fetched
 using 'lsof -i -n -P'.
 Check out https://golang.org/pkg/regexp/ to learn how to properly format your regex.
+
+It is possible to configure with the '-out' flag which output 'lsaddr' will produce. Possible
+values are:
+- "bpf": produces a Berkley Packet Filter expression, which, if given to a tool that supports
+bpfs, will make it capture only the packets headed to/coming from the destination addresses
+of the open network files collected.
+- "csv": produces a CSV encoded table of the open network files collected.
 `
