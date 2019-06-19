@@ -18,8 +18,10 @@ package encoder_test
 import (
 	"strings"
 	"testing"
+	"net"
 
 	"github.com/booster-proj/lsaddr/encoder"
+	"github.com/booster-proj/lsaddr/lookup"
 )
 
 func TestEncode_CSV(t *testing.T) {
