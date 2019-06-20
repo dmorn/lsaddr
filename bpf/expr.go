@@ -1,4 +1,4 @@
-// Copyright © 2019 booster authors 
+// Copyright © 2019 booster authors
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -14,43 +14,46 @@
 
 package bpf
 
-//// BPFEncoder is an Encoder implementation which encodes `lookup.NetFiles`
-//// using the BPF format.
-//// The "Fields" field can be used to configure how the filter is composed.
-//type BPFEncoder struct {
-//	w io.Writer
-//}
-//
-//func newBPFEncoder(w io.Writer) *BPFEncoder {
-//	return &BPFEncoder{
-//		w: w,
-//	}
-//}
-//
-//// Encode encodes "l" into a bpf. A new line is added at the end.
-//func (e *BPFEncoder) Encode(l []lookup.NetFile) error {
-//	// find all destinations
-//	hosts := make(map[string]bool) // using a map to avoid duplicates
-//	for _, v := range l {
-//		host, _, err := net.SplitHostPort(v.Dst.String())
-//		if err != nil {
-//			return err
-//		}
-//
-//		hosts[host] = true
-//	}
-//
-//	hostsL := make([]string, 0, len(hosts))
-//	for k := range hosts {
-//		hostsL = append(hostsL, k)
-//	}
-//
-//	var b strings.Builder
-//	b.WriteString("host ")
-//	b.WriteString(strings.Join(hostsL, " or "))
-//	b.WriteString("\n")
-//
-//	r := strings.NewReader(b.String())
-//	_, err := io.Copy(e.w, r)
-//	return err
-//}
+import (
+	"net"
+	"strings"
+)
+
+type Expr struct {
+	strings.Builder
+}
+
+func NewExpr() *Expr {
+	return &Expr{}
+}
+
+func (e *Expr) Host(addrs []net.Addr) *Expr {
+	seen := make(map[string]bool)
+	acc := make([]string, 0, len(addrs))
+	for _, v := range addrs {
+		host, _, err := net.SplitHostPort(v.String())
+		if err != nil {
+			continue
+		}
+
+		if _, ok := seen[host]; !ok {
+			acc = append(acc, host)
+			seen[host] = true
+		}
+	}
+
+	e.WriteString("host ")
+	e.WriteString(strings.Join(acc, " or "))
+	return e
+}
+
+func (e *Expr) NewReader() *strings.Reader {
+	return strings.NewReader(e.String() + "\n")
+}
+
+func (e *Expr) WriteString(s string) (int, error) {
+	if len(e.String()) > 0 {
+		s = " " + s
+	}
+	return e.Builder.WriteString(s)
+}

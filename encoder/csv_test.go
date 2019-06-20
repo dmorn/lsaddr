@@ -16,9 +16,9 @@
 package encoder_test
 
 import (
+	"net"
 	"strings"
 	"testing"
-	"net"
 
 	"github.com/booster-proj/lsaddr/encoder"
 	"github.com/booster-proj/lsaddr/lookup"

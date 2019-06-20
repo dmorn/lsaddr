@@ -1,4 +1,4 @@
-// Copyright © 2019 booster authors 
+// Copyright © 2019 booster authors
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -17,12 +17,13 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
-	"io"
 	"strings"
 
+	"github.com/booster-proj/lsaddr/bpf"
 	"github.com/booster-proj/lsaddr/encoder"
 	"github.com/booster-proj/lsaddr/lookup"
 	"github.com/spf13/cobra"
@@ -46,7 +47,7 @@ var rootCmd = &cobra.Command{
 
 		output = strings.ToLower(output)
 		if err := validateOutput(output); err != nil {
-			fmt.Printf("%v\n", err)
+			fmt.Fprintf(os.Stderr, "%v\n", err)
 			os.Exit(1)
 		}
 	},
@@ -54,14 +55,14 @@ var rootCmd = &cobra.Command{
 		s := args[0]
 		ff, err := lookup.OpenNetFiles(s)
 		if err != nil {
-			Logger.Printf("unable to find open network files for %s: %v\n", s, err)
+			fmt.Printf("unable to find open network files for %s: %v\n", s, err)
 			os.Exit(1)
 		}
 		Logger.Printf("# of open files: %d", len(ff))
 
 		w := bufio.NewWriter(os.Stdout)
 		if err := writeOutputTo(w, output, ff); err != nil {
-			Logger.Printf("unable to write output: %v", err)
+			fmt.Fprintf(os.Stderr, "unable to write output: %v", err)
 			os.Exit(1)
 		}
 		w.Flush()
@@ -72,7 +73,7 @@ var rootCmd = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(os.Stderr, "%v", err)
 		os.Exit(1)
 	}
 }
@@ -87,7 +88,9 @@ func writeOutputTo(w io.Writer, output string, ff []lookup.NetFile) error {
 	case "csv":
 		return encoder.NewCSV(w).Encode(ff)
 	case "bpf":
-		return nil
+		_, hosts := lookup.Hosts(ff)
+		_, err := io.Copy(w, bpf.NewExpr().Host(hosts).NewReader())
+		return err
 	}
 	return nil
 }
