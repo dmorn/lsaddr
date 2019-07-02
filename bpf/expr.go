@@ -19,15 +19,25 @@ import (
 	"strings"
 )
 
+// Expr represents a BPF expression. It carries a string.Builder,
+// which is used to construct the string. It's zero value is ready
+// to use.
 type Expr struct {
 	strings.Builder
 }
 
+// NewExpr is just a convenience constructor.
 func NewExpr() *Expr {
 	return &Expr{}
 }
 
+// Hosts builds a new expression appending to the current one
+// an "host" filter, using `addrs` as source, deduplicated.
 func (e *Expr) Host(addrs []net.Addr) *Expr {
+	if len(addrs) == 0 {
+		return e
+	}
+
 	seen := make(map[string]bool)
 	acc := make([]string, 0, len(addrs))
 	for _, v := range addrs {
@@ -42,15 +52,20 @@ func (e *Expr) Host(addrs []net.Addr) *Expr {
 		}
 	}
 
-	e.WriteString("host ")
+	e.WriteString("host")
 	e.WriteString(strings.Join(acc, " or "))
 	return e
 }
 
+// NewReader returns an io.Reader implementation, which will read
+// the BPF expression from `e`. Later modifications of `e` will not
+// affect the content of the reader.
 func (e *Expr) NewReader() *strings.Reader {
 	return strings.NewReader(e.String() + "\n")
 }
 
+// WriteString appends `s` to the expression written up to now. It takes
+// care of adding leading white spaces if needed.
 func (e *Expr) WriteString(s string) (int, error) {
 	if len(e.String()) > 0 {
 		s = " " + s
