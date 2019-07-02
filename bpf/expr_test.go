@@ -15,9 +15,35 @@
 package bpf_test
 
 import (
-	"strings"
+	"testing"
+	"net"
+
+	"github.com/booster-proj/lsaddr/bpf"
+	"github.com/booster-proj/lsaddr/lookup"
 )
 
-type Expr struct {
-	strings.Builder
+func TestHost(t *testing.T) {
+	src, dst := lookup.Hosts(netFiles0) // split src and destination addresses
+
+	validateExpr(t, bpf.NewExpr().Host(src), "host 192.168.0.61 or ::1")
+	validateExpr(t, bpf.NewExpr().Host(dst), "host 52.94.218.7 or ::1")
+}
+
+func validateExpr(t *testing.T, e *bpf.Expr, expected string) {
+	if e.String() != expected {
+		t.Fatalf("Unexpected bpf expression: wanted \"%s\", found \"%v\"", expected, e)
+	}
+}
+
+var netFiles0 = []lookup.NetFile{
+	{"foo", newUDPAddr("192.168.0.61:54104"), newUDPAddr("52.94.218.7:443")},
+	{"bar", newUDPAddr("[::1]:60051"), newUDPAddr("[::1]:60052")},
+}
+
+func newUDPAddr(address string) net.Addr {
+	addr, err := net.ResolveUDPAddr("udp", address)
+	if err != nil {
+		panic(err)
+	}
+	return addr
 }
