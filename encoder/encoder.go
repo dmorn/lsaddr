@@ -15,40 +15,10 @@
 
 package encoder
 
-import (
-	"errors"
-	"io"
-
-	"github.com/booster-proj/lsaddr/lookup"
-)
-
-var AllowedEncoders = []string{"csv", "bpf"}
-
-// Encoder is a wrapper around the Encode function.
-type Encoder interface {
-	Encode([]lookup.NetFile) error
-}
+import "io"
 
 // NewCSV returns an Encoder implementation which encodes
 // in CSV format.
 func NewCSV(w io.Writer) *CSVEncoder {
 	return newCSVEncoder(w)
-}
-
-// NewBPF returns an Encoder implementation which encodes
-// in Berkeley Packet Filter format.
-func NewBPF(w io.Writer) *BPFEncoder {
-	return newBPFEncoder(w)
-}
-
-// ValidateType returns an error if "s" does not point to
-// a valid encoder. See `AllowedEncoders` to find which values
-// are allowed.
-func ValidateType(s string) error {
-	for _, v := range AllowedEncoders {
-		if s == v {
-			return nil
-		}
-	}
-	return errors.New("unsupported encoding type " + s)
 }

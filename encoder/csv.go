@@ -22,6 +22,8 @@ import (
 	"github.com/booster-proj/lsaddr/lookup"
 )
 
+// CSVEncoder returns an Encoder which encodes a list
+// of NetFile into CSV format.
 type CSVEncoder struct {
 	w *csv.Writer
 }
@@ -32,6 +34,8 @@ func newCSVEncoder(w io.Writer) *CSVEncoder {
 	}
 }
 
+// Encode writes `l` into encoder's writer in CSV format. Some data may have been
+// written to the writer even upon error.
 func (e *CSVEncoder) Encode(l []lookup.NetFile) error {
 	header := []string{"COMMAND", "NET", "SRC", "DST"}
 	if err := e.w.Write(header); err != nil {
