@@ -121,4 +121,7 @@ Note: `--debug` information is printed to `stderr`, command's output to `stdout`
 lsaddr (master) $ bin/lsaddr /Applications/Spotify.app/ --out=bpf
 host 104.199.64.253 or 2.16.186.91 or 151.101.112.246 or 35.186.224.53 or 35.186.224.47
 ```
-Note: you can encode the output either in csv or as a [bpf](https://en.wikipedia.org/wiki/Berkeley_Packet_Filter) (hint: very useful for packet capturing tools)
+Note: you can encode the output either in csv or as a [bpf](https://en.wikipedia.org/wiki/Berkeley_Packet_Filter)
+(hint: very useful for packet capturing tools). In the latter case, only the unique destination addresses are
+taken, ignoring the ports and without specifing if the "direction" (incoming or outgoing) that we want to
+filter. This is because the expected behaviour has not yet been defined.
