@@ -46,7 +46,7 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 	return openNetFiles(rgx)
 }
 
-// HostsDedup returns the list of source and destination addresses contained
+// Hosts returns the list of source and destination addresses contained
 // in `ff`.
 func Hosts(ff []NetFile) (src, dst []net.Addr) {
 	for _, v := range ff {
