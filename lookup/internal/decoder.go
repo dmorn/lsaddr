@@ -78,30 +78,23 @@ func DecodeLsofOutput(r io.Reader) ([]*OpenFile, error) {
 // "line" example:
 // "postgres    676 danielmorandini   10u  IPv6 0x25c5bf0997ca88e3      0t0  UDP [::1]:60051->[::1]:60051"
 func UnmarshalLsofLine(line string) (*OpenFile, error) {
-	chunks := strings.Split(line, " ")
-	l := make([]string, 0, len(chunks))
-	for _, v := range chunks {
-		if v == "" {
-			continue
-		}
-		l = append(l, v)
-	}
-	if len(l) < 9 {
-		return nil, fmt.Errorf("unrecognised open file line: expected at least 9 items, found %d: line \"%s\"", len(l), l)
+	chunks, err := chunkLine(line, " ", 9)
+	if err != nil {
+		return nil, err
 	}
 
 	f := &OpenFile{
-		Command: l[0],
-		Pid:     l[1],
-		User:    l[2],
-		Fd:      l[3],
-		Type:    l[4],
-		Device:  l[5],
-		Node:    l[7],
-		Name:    l[8],
+		Command: chunks[0],
+		Pid:     chunks[1],
+		User:    chunks[2],
+		Fd:      chunks[3],
+		Type:    chunks[4],
+		Device:  chunks[5],
+		Node:    chunks[7],
+		Name:    chunks[8],
 	}
-	if len(l) >= 10 {
-		f.State = l[9]
+	if len(chunks) >= 10 {
+		f.State = chunks[9]
 	}
 	return f, nil
 }
@@ -113,20 +106,13 @@ func DecodeNetstatOutput(r io.Reader) ([]*OpenFile, error) {
 }
 
 func UnmarshalNetstatLine(line string) (*OpenFile, error) {
-	chunks := strings.Split(line, " ")
-	l := make([]string, 0, len(chunks))
-	for _, v := range chunks {
-		if v == "" {
-			continue
-		}
-		l = append(l, v)
-	}
-	if len(l) < 4 {
-		return nil, fmt.Errorf("unerecognised open file line: expected 4 items, found %d: line \"%s\"", len(l), l)
+	chunks, err := chunkLine(line, " ", 4)
+	if err != nil {
+		return nil, err
 	}
 
-	from := l[1]
-	to := l[2]
+	from := chunks[1]
+	to := chunks[2]
 	if !isValidAddress(from) {
 		return nil, fmt.Errorf("unrecognised source ip address: %s", from)
 	}
@@ -135,21 +121,38 @@ func UnmarshalNetstatLine(line string) (*OpenFile, error) {
 	}
 
 	f := &OpenFile{
-		Node: l[0],
+		Node: chunks[0],
 		Name: from+"->"+to,
 	}
-	if len(l) == 4 {
+	if len(chunks) == 4 {
 		// It means that the state field is missing
-		f.Pid = l[3]
+		f.Pid = chunks[3]
 	} else {
-		f.State = l[3]
-		f.Pid = l[4]
+		f.State = chunks[3]
+		f.Pid = chunks[4]
 	}
 
 	return f, nil
 }
 
 // Private helpers
+
+func chunkLine(line string, sep string, min int) ([]string, error) {
+	items := strings.Split(line, sep)
+	chunks := make([]string, 0, len(items))
+	for _, v := range items {
+		if v == "" {
+			continue
+		}
+		chunks = append(chunks, v)
+	}
+	n := len(chunks)
+	if n < min {
+		return chunks, fmt.Errorf("unable to chunk line: expected at least %d items, found %d: line \"%s\"", min, n, chunks)
+	}
+
+	return chunks, nil
+}
 
 type lineUnmarshalerFunc func(string) (*OpenFile, error)
 
