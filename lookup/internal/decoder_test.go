@@ -31,33 +31,15 @@ func TestUnmarshalLsofLine(t *testing.T) {
 		t.Fatalf("Unexpcted error: %v", err)
 	}
 
-	if f.Command != "Spotify" {
-		t.Fatalf("Unexpected %v", f.Command)
-	}
-	if f.Pid != "11778" {
-		t.Fatalf("Unexpected %v", f.Pid)
-	}
-	if f.User != "danielmorandini" {
-		t.Fatalf("Unexpected %v", f.User)
-	}
-	if f.Fd != "128u" {
-		t.Fatalf("Unexpected %v", f.Fd)
-	}
-	if f.Type != "IPv4" {
-		t.Fatalf("Unexpected %v", f.Type)
-	}
-	if f.Device != "0x25c5bf09993eff03" {
-		t.Fatalf("Unexpected %v", f.Device)
-	}
-	if f.Node != "TCP" {
-		t.Fatalf("Unexpected %v", f.Node)
-	}
-	if f.Name != "192.168.0.61:51291->35.186.224.47:https" {
-		t.Fatalf("Unexpected %v", f.Name)
-	}
-	if f.State != "(ESTABLISHED)" {
-		t.Fatalf("Unexpected %v", f.State)
-	}
+	assert(t, "Spotify", f.Command)
+	assert(t, "11778", f.Pid)
+	assert(t, "danielmorandini", f.User)
+	assert(t, "128u", f.Fd)
+	assert(t, "IPv4", f.Type)
+	assert(t, "0x25c5bf09993eff03", f.Device)
+	assert(t, "TCP", f.Node)
+	assert(t, "192.168.0.61:51291->35.186.224.47:https", f.Name)
+	assert(t, "(ESTABLISHED)", f.State)
 }
 
 const lsofExample = `Dropbox     614 danielmorandini  236u  IPv4 0x25c5bf09a4161583      0t0  TCP 192.168.0.61:58122->162.125.66.7:https (ESTABLISHED)
@@ -129,5 +111,25 @@ func TestDecodeNetstatOutput(t *testing.T) {
 	}
 	if len(ll) != 4 {
 		t.Fatalf("Unexpected ll length: wanted 4, found %d: %v", len(ll), ll)
+	}
+}
+
+func TestUnmarshalNetstatLine(t *testing.T) {
+	line := "  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING       748"
+	f, err := internal.UnmarshalNetstatLine(line)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	assert(t, "TCP", f.Node)
+	assert(t, "0.0.0.0:135->0.0.0.0:0", f.Name)
+	assert(t, "LISTENING", f.State)
+	assert(t, "748", f.Pid)
+}
+
+// Private helpers
+
+func assert(t *testing.T, exp, x string) {
+	if exp != x {
+		t.Fatalf("Assert failed: expected %s, found %s", exp, x)
 	}
 }
