@@ -1,5 +1,3 @@
-// +build darwin linux
-
 // Copyright © 2019 booster authors
 //
 // This program is free software: you can redistribute it and/or modify
@@ -23,6 +21,8 @@ import (
 
 	"github.com/booster-proj/lsaddr/lookup/internal"
 )
+
+// Lsof
 
 func TestUnmarshalLsofLine(t *testing.T) {
 	line := "Spotify   11778 danielmorandini  128u  IPv4 0x25c5bf09993eff03      0t0  TCP 192.168.0.61:51291->35.186.224.47:https (ESTABLISHED)"
@@ -102,5 +102,30 @@ func TestUnmarshalName(t *testing.T) {
 		if src.Network() != v.net {
 			t.Fatalf("%d: Unexpected net: wanted %s, found %s", i, v.net, src.Network())
 		}
+	}
+}
+
+// Netstat
+
+const netstatExample = `
+Active Connections
+
+  Proto  Local Address          Foreign Address        State           PID
+  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING       748
+  RpcSs
+ [svchost.exe]
+  TCP    0.0.0.0:445            0.0.0.0:0              LISTENING       4
+ Can not obtain ownership information
+  TCP    0.0.0.0:5357           0.0.0.0:0              LISTENING       4
+`
+
+func TestDecodeNetstatOutput(t *testing.T) {
+	buf := bytes.NewBufferString(netstatExample)
+	ll, err := internal.DecodeNetstatOUtput(buf)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if len(ll) != 3 {
+		t.Fatalf("Unexpected ll length: wanted 3, found %d: %v", len(ll), ll)
 	}
 }

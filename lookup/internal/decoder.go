@@ -1,5 +1,3 @@
-// +build darwin linux
-
 // Copyright © 2019 booster authors
 //
 // This program is free software: you can redistribute it and/or modify
@@ -24,6 +22,8 @@ import (
 	"net"
 	"strings"
 )
+
+// Lsof section
 
 type OpenFile struct {
 	Command string
@@ -55,20 +55,12 @@ func (f *OpenFile) UnmarshalName() (net.Addr, net.Addr) {
 	return src, addr{net: strings.ToLower(f.Node), addr: chunks[1]}
 }
 
-// addr is a net.Addr implementation.
-type addr struct {
-	addr string
-	net  string
-}
-
-func (a addr) String() string {
-	return a.addr
-}
-
-func (a addr) Network() string {
-	return a.net
-}
-
+// DecodeLsofOutput expects "r" to contain the output of
+// an ``lsof -i -n -P'' call. The output is splitted into each new line,
+// and each line that ``UnmarshalLsofLine'' is able to Unmarshal
+// is appended to the final output.
+// Returns an error only if reading from "r" produces an error
+// different from ``io.EOF''.
 func DecodeLsofOutput(r io.Reader) ([]*OpenFile, error) {
 	ll := []*OpenFile{}
 	buf := bufio.NewReader(r)
@@ -90,6 +82,14 @@ func DecodeLsofOutput(r io.Reader) ([]*OpenFile, error) {
 	}
 }
 
+// UnmarshalLsofLine expectes "line" to be a single line output from
+// ``lsof -i -n -P'' call. The line is unmarshaled into an ``OpenFile''
+// only if is splittable by " " into a slice of 9 items, such as:
+//
+// "postgres    676 danielmorandini   10u  IPv6 0x25c5bf0997ca88e3      0t0  UDP [::1]:60051->[::1]:60051"
+//
+// Note:
+// "line" should not end with a new line.
 func UnmarshalLsofLine(line string) (*OpenFile, error) {
 	chunks := strings.Split(line, " ")
 	l := make([]string, 0, len(chunks))
@@ -99,7 +99,7 @@ func UnmarshalLsofLine(line string) (*OpenFile, error) {
 		}
 	}
 	if len(l) < 9 {
-		return nil, fmt.Errorf("unrecognised open file line: expected 10 items, found %d: line \"%s\"", len(l), l)
+		return nil, fmt.Errorf("unrecognised open file line: expected 9 items, found %d: line \"%s\"", len(l), l)
 	}
 
 	f := &OpenFile{
@@ -117,3 +117,20 @@ func UnmarshalLsofLine(line string) (*OpenFile, error) {
 	}
 	return f, nil
 }
+
+// Private helpers
+
+// addr is a net.Addr implementation.
+type addr struct {
+	addr string
+	net  string
+}
+
+func (a addr) String() string {
+	return a.addr
+}
+
+func (a addr) Network() string {
+	return a.net
+}
+

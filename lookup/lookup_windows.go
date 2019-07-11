@@ -23,7 +23,12 @@ import (
 )
 
 func buildRgx(s string) (*regexp.Regexp, error) {
-	return nil, fmt.Errorf("not implemented yet")
+	rgx, err := regexp.Compile(expr)
+	if err != nil {
+		return nil, err
+	}
+
+	return rgx, nil
 }
 
 func openNetFiles(rgx *regexp.Regexp) ([]NetFile, error) {
