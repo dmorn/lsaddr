@@ -18,19 +18,14 @@
 package lookup
 
 import (
-	"regexp"
-	"fmt"
+	"github.com/booster-proj/lsaddr/lookup/internal"
+	"gopkg.in/pipe.v2"
 )
 
-func buildRgx(s string) (*regexp.Regexp, error) {
-	rgx, err := regexp.Compile(expr)
-	if err != nil {
-		return nil, err
-	}
-
-	return rgx, nil
+func lsofCmd() pipe.Pipe {
+	return pipe.Exec("netstat", "-ano")
 }
 
-func openNetFiles(rgx *regexp.Regexp) ([]NetFile, error) {
-	return []NetFile{}, fmt.Errorf("not implemented yet")
+func lsofDecoder() lsofDecoderFunc {
+	return internal.DecodeNetstatOutput
 }

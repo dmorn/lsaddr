@@ -18,28 +18,15 @@
 package lookup
 
 import (
-	"bytes"
-	"regexp"
-
 	"github.com/booster-proj/lsaddr/lookup/internal"
 	"gopkg.in/pipe.v2"
 )
 
-// openNetFiles uses ``lsof'' to find the list of open network files. It
-// then filters the result using "rgx": each line that does not match is
-// discarded.
-func openNetFiles(rgx *regexp.Regexp) ([]*internal.OpenFile, error) {
-	p := pipe.Line(
-		pipe.Exec("lsof", "-i", "-n", "-P"),
-		pipe.Filter(func(line []byte) bool {
-			return rgx.Match(line)
-		}),
-	)
-	output, err := pipe.Output(p)
-	if err != nil {
-		return []*internal.OpenFile{}, err
-	}
 
-	buf := bytes.NewBuffer(output)
-	return internal.DecodeLsofOutput(buf)
+func lsofCmd() pipe.Pipe {
+	return pipe.Exec("lsof", "-i", "-n", "-P")
+}
+
+func lsofDecoder() lsofDecoderFunc {
+	return internal.DecodeLsofOutput
 }
