@@ -19,12 +19,9 @@ import (
 	"log"
 	"net"
 	"os"
-	"io"
 	"regexp"
-	"bytes"
 
 	"github.com/booster-proj/lsaddr/lookup/internal"
-	"gopkg.in/pipe.v2"
 )
 
 var Logger = log.New(os.Stderr, "[lookup] ", 0)
@@ -49,9 +46,10 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 	if err != nil {
 		return []NetFile{}, err
 	}
+
 	Logger.Printf("regexp built: \"%s\"", rgx.String())
 
-	ll, err := openNetFiles(rgx)
+	ll, err := internal.OpenNetFiles(rgx)
 	if err != nil {
 		return []NetFile{}, err
 	}
@@ -69,7 +67,7 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 	return ff, nil
 }
 
-// HostsDedup returns the list of source and destination addresses contained
+// Hosts returns the list of source and destination addresses contained
 // in `ff`.
 func Hosts(ff []NetFile) (src, dst []net.Addr) {
 	for _, v := range ff {
@@ -78,8 +76,6 @@ func Hosts(ff []NetFile) (src, dst []net.Addr) {
 	}
 	return
 }
-
-type lsofDecoderFunc func(io.Reader) ([]*internal.OpenFile, error)
 
 // Private helpers
 
@@ -98,25 +94,4 @@ func buildRgx(s string) (*regexp.Regexp, error) {
 	}
 
 	return rgx, nil
-}
-
-// openNetFiles uses ``lsof'' (or its platform dependent equivalent) to find
-// the list of open network files. It then filters the result using "rgx":
-// each line that does not match is discarded.
-func openNetFiles(rgx *regexp.Regexp) ([]*internal.OpenFile, error) {
-	dec := lsofDecoder()
-
-	p := pipe.Line(
-		lsofCmd(),
-		pipe.Filter(func(line []byte) bool {
-			return rgx.Match(line)
-		}),
-	)
-	output, err := pipe.Output(p)
-	if err != nil {
-		return []*internal.OpenFile{}, err
-	}
-
-	buf := bytes.NewBuffer(output)
-	return dec(buf)
 }

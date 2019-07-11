@@ -15,10 +15,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package lookup
+package internal
 
 import (
-	"github.com/booster-proj/lsaddr/lookup/internal"
 	"gopkg.in/pipe.v2"
 )
 
@@ -27,5 +26,5 @@ func lsofCmd() pipe.Pipe {
 }
 
 func lsofDecoder() lsofDecoderFunc {
-	return internal.DecodeNetstatOutput
+	return DecodeNetstatOutput
 }

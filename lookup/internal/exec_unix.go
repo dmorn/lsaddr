@@ -1,4 +1,4 @@
-// +build darwin
+// +build darwin linux
 
 // Copyright © 2019 booster authors
 //
@@ -18,30 +18,13 @@
 package internal
 
 import (
-	"bytes"
-	"io"
-
-	"howett.net/plist"
+	"gopkg.in/pipe.v2"
 )
 
-// ExtractAppName is used to find the value of the "CFBundleExecutable" key.
-// "r" is expected to be an ".plist" encoded file.
-func ExtractAppName(r io.Reader) (string, error) {
-	rs, ok := r.(io.ReadSeeker)
-	if !ok {
-		var buf bytes.Buffer
-		if _, err := io.Copy(&buf, r); err != nil {
-			return "", err
-		}
-		rs = bytes.NewReader(buf.Bytes())
-	}
+func lsofCmd() pipe.Pipe {
+	return pipe.Exec("lsof", "-i", "-n", "-P")
+}
 
-	var data struct {
-		Name string `plist:"CFBundleExecutable"`
-	}
-	if err := plist.NewDecoder(rs).Decode(&data); err != nil {
-		return "", err
-	}
-
-	return data.Name, nil
+func lsofDecoder() lsofDecoderFunc {
+	return DecodeLsofOutput
 }

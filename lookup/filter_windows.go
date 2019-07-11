@@ -1,4 +1,4 @@
-// +build darwin linux
+// +build windows
 
 // Copyright © 2019 booster authors
 //
@@ -17,16 +17,6 @@
 
 package lookup
 
-import (
-	"github.com/booster-proj/lsaddr/lookup/internal"
-	"gopkg.in/pipe.v2"
-)
-
-
-func lsofCmd() pipe.Pipe {
-	return pipe.Exec("lsof", "-i", "-n", "-P")
-}
-
-func lsofDecoder() lsofDecoderFunc {
-	return internal.DecodeLsofOutput
+func prepareExpr(s string) (string, error) {
+	return s, nil
 }
