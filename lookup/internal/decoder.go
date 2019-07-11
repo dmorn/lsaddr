@@ -37,6 +37,10 @@ type OpenFile struct {
 	State   string // (ENSTABLISHED), (LISTEN), ...
 }
 
+func (f *OpenFile) String() string {
+	return fmt.Sprintf("{Pid: %s, Proto: %s, Conn: %s}", f.Pid, f.Node, f.Name)
+}
+
 // By default, ``lsof'' "name" output is of the form:
 // [46][protocol][@hostname|hostaddr][:service|port]
 // but we're disabling hostname conversion with the ``-n'' option
@@ -62,44 +66,28 @@ func (f *OpenFile) UnmarshalName() (net.Addr, net.Addr) {
 // Returns an error only if reading from "r" produces an error
 // different from ``io.EOF''.
 func DecodeLsofOutput(r io.Reader) ([]*OpenFile, error) {
-	ll := []*OpenFile{}
-	buf := bufio.NewReader(r)
-	for {
-		line, err := buf.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				return ll, nil
-			}
-			return ll, err
-		}
-		line = strings.Trim(line, "\n")
-		f, err := UnmarshalLsofLine(line)
-		if err != nil {
-			// Skip this line
-			continue
-		}
-		ll = append(ll, f)
-	}
+	return scanLines(r, UnmarshalLsofLine)
 }
 
 // UnmarshalLsofLine expectes "line" to be a single line output from
 // ``lsof -i -n -P'' call. The line is unmarshaled into an ``OpenFile''
-// only if is splittable by " " into a slice of 9 items, such as:
+// only if is splittable by " " into a slice of 9 items. "line" should
+// not end with a "\n" delimitator, otherwise it will end up in the last
+// unmarshaled item.
 //
+// "line" example:
 // "postgres    676 danielmorandini   10u  IPv6 0x25c5bf0997ca88e3      0t0  UDP [::1]:60051->[::1]:60051"
-//
-// Note:
-// "line" should not end with a new line.
 func UnmarshalLsofLine(line string) (*OpenFile, error) {
 	chunks := strings.Split(line, " ")
 	l := make([]string, 0, len(chunks))
 	for _, v := range chunks {
-		if v != "" {
-			l = append(l, v)
+		if v == "" {
+			continue
 		}
+		l = append(l, v)
 	}
 	if len(l) < 9 {
-		return nil, fmt.Errorf("unrecognised open file line: expected 9 items, found %d: line \"%s\"", len(l), l)
+		return nil, fmt.Errorf("unrecognised open file line: expected at least 9 items, found %d: line \"%s\"", len(l), l)
 	}
 
 	f := &OpenFile{
@@ -118,7 +106,75 @@ func UnmarshalLsofLine(line string) (*OpenFile, error) {
 	return f, nil
 }
 
+// Netstat
+
+func DecodeNetstatOutput(r io.Reader) ([]*OpenFile, error) {
+	return scanLines(r, UnmarshalNetstatLine)
+}
+
+func UnmarshalNetstatLine(line string) (*OpenFile, error) {
+	chunks := strings.Split(line, " ")
+	l := make([]string, 0, len(chunks))
+	for _, v := range chunks {
+		if v == "" {
+			continue
+		}
+		l = append(l, v)
+	}
+	if len(l) < 4 {
+		return nil, fmt.Errorf("unerecognised open file line: expected 4 items, found %d: line \"%s\"", len(l), l)
+	}
+
+	from := l[1]
+	to := l[2]
+	if !isValidAddress(from) {
+		return nil, fmt.Errorf("unrecognised source ip address: %s", from)
+	}
+	if !isValidAddress(to) {
+		return nil, fmt.Errorf("unrecognised destination ip address: %s", to)
+	}
+
+	f := &OpenFile{
+		Node: l[0],
+		Name: from+"->"+to,
+	}
+	if len(l) == 4 {
+		// It means that the state field is missing
+		f.Pid = l[3]
+	} else {
+		f.State = l[3]
+		f.Pid = l[4]
+	}
+
+	return f, nil
+}
+
 // Private helpers
+
+type lineUnmarshalerFunc func(string) (*OpenFile, error)
+
+func scanLines(r io.Reader, f lineUnmarshalerFunc) ([]*OpenFile, error) {
+	ll := []*OpenFile{}
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		line := scanner.Text()
+		line = strings.Trim(line, "\n")
+		line = strings.Trim(line, "\r")
+		f, err := f(line)
+		if err != nil {
+			// Skip this line
+			continue
+		}
+		ll = append(ll, f)
+	}
+	return ll, scanner.Err()
+}
+
+func isValidAddress(s string) bool {
+	_, _, err := net.SplitHostPort(s)
+	return err == nil
+}
+
 
 // addr is a net.Addr implementation.
 type addr struct {

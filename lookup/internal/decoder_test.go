@@ -117,15 +117,17 @@ Active Connections
   TCP    0.0.0.0:445            0.0.0.0:0              LISTENING       4
  Can not obtain ownership information
   TCP    0.0.0.0:5357           0.0.0.0:0              LISTENING       4
+ [svchost.exe]
+  UDP    [::1]:62261            *:*                                    1036
 `
 
 func TestDecodeNetstatOutput(t *testing.T) {
 	buf := bytes.NewBufferString(netstatExample)
-	ll, err := internal.DecodeNetstatOUtput(buf)
+	ll, err := internal.DecodeNetstatOutput(buf)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	if len(ll) != 3 {
-		t.Fatalf("Unexpected ll length: wanted 3, found %d: %v", len(ll), ll)
+	if len(ll) != 4 {
+		t.Fatalf("Unexpected ll length: wanted 4, found %d: %v", len(ll), ll)
 	}
 }
