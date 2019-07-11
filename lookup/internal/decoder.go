@@ -71,12 +71,13 @@ func DecodeLsofOutput(r io.Reader) ([]*OpenFile, error) {
 
 // UnmarshalLsofLine expectes "line" to be a single line output from
 // ``lsof -i -n -P'' call. The line is unmarshaled into an ``OpenFile''
-// only if is splittable by " " into a slice of 9 items. "line" should
+// only if is splittable by " " into a slice of at least 9 items. "line" should
 // not end with a "\n" delimitator, otherwise it will end up in the last
 // unmarshaled item.
 //
-// "line" example:
+// "line" examples:
 // "postgres    676 danielmorandini   10u  IPv6 0x25c5bf0997ca88e3      0t0  UDP [::1]:60051->[::1]:60051"
+// "Dropbox     614 danielmorandini  247u  IPv4 0x25c5bf09a393d583      0t0  TCP 192.168.0.61:58282->162.125.18.133:https (ESTABLISHED)"
 func UnmarshalLsofLine(line string) (*OpenFile, error) {
 	chunks, err := chunkLine(line, " ", 9)
 	if err != nil {
@@ -101,9 +102,25 @@ func UnmarshalLsofLine(line string) (*OpenFile, error) {
 
 // Netstat
 
+// DecodeNetstatOutput expects "r" to contain the output of
+// a ``netstat -ano'' call. The output is splitted into lines, and
+// each line that ``UnmarshalNetstatLine'' is able to Unmarshal is
+// appended to the final output.
+// As of ``DecodeLsofOutput'', this function returns an error only
+// if reading from "r" produces an error different from ``io.EOF''.
 func DecodeNetstatOutput(r io.Reader) ([]*OpenFile, error) {
 	return scanLines(r, UnmarshalNetstatLine)
 }
+
+// UnmarshalNetstatLine expectes "line" to be a single line output from
+// ``netstat -ano'' call. The line is unmarshaled into an ``OpenFile''
+// only if is splittable by " " into a slice of at least 4 items. "line" should
+// not end with a "\n" delimitator, otherwise it will end up in the last
+// unmarshaled item.
+//
+// "line" examples:
+// "  TCP    0.0.0.0:5357           0.0.0.0:0              LISTENING       4"
+// "  UDP    [::1]:62261            *:*                                    1036"
 
 func UnmarshalNetstatLine(line string) (*OpenFile, error) {
 	chunks, err := chunkLine(line, " ", 4)
