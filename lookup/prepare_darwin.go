@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	"github.com/booster-proj/lsaddr/lookup/internal"
+	"gopkg.in/pipe.v2"
 )
 
 // prepareExpr returns "s" untouched if it does not end with ".app". In that case,
@@ -50,7 +51,7 @@ func prepareExpr(s string) (string, error) {
 	Logger.Printf("app name: %s, path: %s", name, path)
 
 	// Find process identifier associated with this app.
-	pids := Pids(name)
+	pids := pids(name)
 	if len(pids) == 0 {
 		return "", fmt.Errorf("cannot find any PID associated with %s", name)
 	}
@@ -69,4 +70,20 @@ func appName(path string) (string, error) {
 	}
 	defer f.Close()
 	return internal.ExtractAppName(f)
+}
+
+// pids returns the process identifiers of "proc".
+func pids(proc string) []string {
+	p := pipe.Exec("pgrep", proc)
+	output, err := pipe.Output(p)
+	if err != nil {
+		Logger.Printf("%v", err)
+		return []string{}
+	}
+
+	var builder strings.Builder
+	builder.Write(output)
+
+	trimmed := strings.Trim(builder.String(), "\n")
+	return strings.Split(trimmed, "\n")
 }

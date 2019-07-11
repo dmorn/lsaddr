@@ -19,6 +19,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"regexp"
 )
 
 var Logger = log.New(os.Stderr, "[lookup] ", 0)
@@ -43,7 +44,22 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 		return []NetFile{}, err
 	}
 
-	return openNetFiles(rgx)
+	ll, err := openNetFiles(rgx)
+	if err != nil {
+		return []NetFile{}, err
+	}
+
+	// map ``internal.OpenFile'' to ``NetFile''
+	ff := make([]NetFile, len(ll))
+	for i, v := range ll {
+		src, dst := v.UnmarshalName()
+		ff[i] = NetFile{
+			Command: v.Command,
+			Src:     src,
+			Dst:     dst,
+		}
+	}
+	return ff, nil
 }
 
 // HostsDedup returns the list of source and destination addresses contained
@@ -55,3 +71,23 @@ func Hosts(ff []NetFile) (src, dst []net.Addr) {
 	}
 	return
 }
+
+// Private helpers
+
+// buildRgx compiles a regular expression out of "s". Some manipulation
+// may be performed on "s" before it is compiled, depending on the hosting
+// operating system: on macOS for example, if "s" ends with ".app", it
+// will be trated as the root path to an application.
+func buildRgx(s string) (*regexp.Regexp, error) {
+	expr, err := prepareExpr(s)
+	if err != nil {
+		return nil, err
+	}
+	rgx, err := regexp.Compile(expr)
+	if err != nil {
+		return nil, err
+	}
+
+	return rgx, nil
+}
+

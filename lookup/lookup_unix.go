@@ -20,33 +20,15 @@ package lookup
 import (
 	"bytes"
 	"regexp"
-	"strings"
 
 	"github.com/booster-proj/lsaddr/lookup/internal"
 	"gopkg.in/pipe.v2"
 )
 
-// buildRgx compiles a regular expression out of "s". Some manipulation
-// may be performed on "s" before it is compiled, depending on the hosting
-// operating system: on macOS for example, if "s" ends with ".app", it
-// will be trated as the root path to an application.
-func buildRgx(s string) (*regexp.Regexp, error) {
-	expr, err := prepareExpr(s)
-	if err != nil {
-		return nil, err
-	}
-	rgx, err := regexp.Compile(expr)
-	if err != nil {
-		return nil, err
-	}
-
-	return rgx, nil
-}
-
 // openNetFiles uses ``lsof'' to find the list of open network files. It
 // then filters the result using "rgx": each line that does not match is
 // discarded.
-func openNetFiles(rgx *regexp.Regexp) ([]NetFile, error) {
+func openNetFiles(rgx *regexp.Regexp) ([]*internal.OpenFile, error) {
 	p := pipe.Line(
 		pipe.Exec("lsof", "-i", "-n", "-P"),
 		pipe.Filter(func(line []byte) bool {
@@ -55,39 +37,9 @@ func openNetFiles(rgx *regexp.Regexp) ([]NetFile, error) {
 	)
 	output, err := pipe.Output(p)
 	if err != nil {
-		return []NetFile{}, err
+		return []*internal.OpenFile{}, err
 	}
 
 	buf := bytes.NewBuffer(output)
-	ll, err := internal.DecodeLsofOutput(buf)
-	if err != nil {
-		return []NetFile{}, err
-	}
-
-	onf := make([]NetFile, len(ll))
-	for i, v := range ll {
-		src, dst := v.UnmarshalName()
-		onf[i] = NetFile{
-			Command: v.Command,
-			Src:     src,
-			Dst:     dst,
-		}
-	}
-	return onf, nil
-}
-
-// Pids returns the process identifiers of "proc".
-func Pids(proc string) []string {
-	p := pipe.Exec("pgrep", proc)
-	output, err := pipe.Output(p)
-	if err != nil {
-		Logger.Printf("%v", err)
-		return []string{}
-	}
-
-	var builder strings.Builder
-	builder.Write(output)
-
-	trimmed := strings.Trim(builder.String(), "\n")
-	return strings.Split(trimmed, "\n")
+	return internal.DecodeLsofOutput(buf)
 }
