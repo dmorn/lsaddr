@@ -17,5 +17,42 @@ package internal_test
 
 import (
 	"testing"
+
+	"github.com/booster-proj/lsaddr/lookup/internal"
 )
 
+func TestPidsFromTasks(t *testing.T) {
+	tasks := []*internal.Task{
+		newTask("foo", "1"),
+		newTask("foo", "2"),
+		newTask("foo", "3"),
+		newTask("bar", "21"),
+		newTask("bar", "22"),
+		newTask("baz", "31"),
+	}
+
+	assertList(t, []string{"1", "2", "3"}, internal.PidsFromTasks(tasks, "foo"))
+	assertList(t, []string{"21", "22"}, internal.PidsFromTasks(tasks, "bar"))
+	assertList(t, []string{"31"}, internal.PidsFromTasks(tasks, "baz"))
+	assertList(t, []string{}, internal.PidsFromTasks(tasks, "invalid"))
+}
+
+// Private helpers
+
+func newTask(image, pid string) *internal.Task {
+	return &internal.Task{
+		Image: image,
+		Pid: pid,
+	}
+}
+
+func assertList(t *testing.T, exp, x []string) {
+	if len(exp) != len(x) {
+		t.Fatalf("Unexpected list length. Wanted %d, found %d", len(exp), len(x))
+	}
+	for i := range exp {
+		if exp[i] != x[i] {
+			t.Fatalf("Unexpected item in list. Wanted %v, found %v. Content: %v", exp[i], x[i], x)
+		}
+	}
+}

@@ -39,6 +39,16 @@ func BuildNFFilter(s string) (*regexp.Regexp, error) {
 	return rgx, nil
 }
 
+func PidsFromTasks(tasks []*Task, image string) []string {
+	pids := []string{}
+	for _, v := range tasks {
+		if v.Image != image {
+			continue
+		}
+		pids = append(pids, v.Pid)
+	}
+	return pids
+}
 
 // Private helpers
 
@@ -115,17 +125,22 @@ func prepareNFExprWin(s string) string {
 		// an executable name.
 		return s
 	}
+
 	// TODO: what if "s" is a path? Only its last component
 	// is required.
 
-
 	tasks := tasks(s)
 	if len(tasks) == 0 {
+		Logger.Printf("cannot find any task associated with %s", s)
+		return s
+	}
+	pids := PidsFromTasks(tasks, s)
+	if len(pids) == 0 {
 		Logger.Printf("cannot find any PID associated with %s", s)
 		return s
 	}
-	// TODO: implement tasks grouping
-	return s
+
+	return strings.Join(pids, "|")
 }
 
 // tasks executes the ``tasklist'' command, which is only
