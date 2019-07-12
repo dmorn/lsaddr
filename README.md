@@ -32,7 +32,7 @@ the lines that match against it are kept, the others discarded. You can pass to 
 target app (supported only on macOS for now). Check out some examples:
 
 
-### Example #1
+#### Example #1
 "Spotify" is used as a regular expression.
 ```
 $ bin/lsaddr Spotify
@@ -48,7 +48,7 @@ Spotify,tcp,192.168.0.98:54878,35.186.224.47:443
 Spotify,tcp,192.168.0.98:54872,35.186.224.53:443
 ```
 
-### Example #2
+#### Example #2
 "/Applications/Spotify.app" is used to find the application's name, then its
 process identifiers are used to build the regular expression.
 ```
@@ -65,7 +65,7 @@ Spotify,tcp,192.168.0.98:54878,35.186.224.47:443
 Spotify,tcp,192.168.0.98:54872,35.186.224.53:443
 ```
 
-### Example #3
+#### Example #3
 `--debug` information is printed to `stderr`, command's output to `stdout`.
 ```
 $ bin/lsaddr /Applications/Spotify.app/ --debug
@@ -84,7 +84,7 @@ Spotify,tcp,192.168.0.98:54878,35.186.224.47:443
 Spotify,tcp,192.168.0.98:54872,35.186.224.53:443
 ```
 
-### Example #4
+#### Example #4
 - you can encode the output either in csv or as a [bpf](https://en.wikipedia.org/wiki/Berkeley_Packet_Filter) (hint: very useful for packet capturing tools). 
 - only the unique destination addresses are taken into consideration when building the filter,
 ignoring the ports and without specifing if the "direction" (incoming or outgoing) that we want to
