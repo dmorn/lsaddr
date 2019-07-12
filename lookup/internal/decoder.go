@@ -175,13 +175,29 @@ func UnmarshalNetstatLine(line string) (*OpenFile, error) {
 // Tasklist
 
 type Task struct {
-	Pids  []string
+	Pid string
 	Image string
+}
+
+func (t *Task) String() string {
+	return fmt.Sprintf("{Image: %s, Pid: %v}", t.Image, t.Pid)
 }
 
 func DecodeTasklistOutput(r io.Reader) ([]*Task, error) {
 	ll := []*Task{}
+	delim := "="
+	headerTrimmed := false
 	err := scanLines(r, func(line string) {
+		if !headerTrimmed {
+			if strings.HasPrefix(line, delim) && strings.HasSuffix(line, delim) {
+				// This is the header delimiter!
+				headerTrimmed = true
+				return
+			}
+			// Still in the header
+			return
+		}
+
 		t, err := UnmarshalTasklistLine(line)
 		if err != nil {
 			// Skip this line
@@ -193,7 +209,14 @@ func DecodeTasklistOutput(r io.Reader) ([]*Task, error) {
 }
 
 func UnmarshalTasklistLine(line string) (*Task, error) {
-	return nil, nil
+	chunks, err := chunkLine(line, " ", 5)
+	if err != nil {
+		return nil, err
+	}
+	return &Task{
+		Image: chunks[0],
+		Pid: chunks[1],
+	}, nil
 }
 
 // Plist

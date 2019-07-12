@@ -26,11 +26,10 @@ import (
 
 var Logger *log.Logger
 
-type lsofDecoderFunc func(io.Reader) ([]*OpenFile, error)
-
 type Runtime struct {
-	LsofCmd pipe.Pipe
-	LsofDecoder lsofDecoderFunc
+	OFCmd pipe.Pipe // Open Files Command
+	OFDecoder func(io.Reader) ([]*OpenFile, error) // Open Files Decoder
+	PrepareNFExprFunc func(string) string
 }
 
 // OpenNetFiles uses ``lsof'' (or its platform dependent equivalent) to find
@@ -38,7 +37,7 @@ type Runtime struct {
 // each line that does not match is discarded.
 func OpenNetFiles(rgx *regexp.Regexp) ([]*OpenFile, error) {
 	p := pipe.Line(
-		runtime.LsofCmd,
+		runtime.OFCmd,
 		pipe.Filter(func(line []byte) bool {
 			return rgx.Match(line)
 		}),
@@ -49,19 +48,5 @@ func OpenNetFiles(rgx *regexp.Regexp) ([]*OpenFile, error) {
 	}
 
 	buf := bytes.NewBuffer(output)
-	return runtime.LsofDecoder(buf)
-}
-
-// BuildNFFilter compiles a regular expression out of "s". Some manipulation
-// may be performed on "s" before it is compiled, depending on the hosting
-// operating system: on macOS for example, if "s" ends with ".app", it
-// will be trated as the root path to an application.
-func BuildNFFilter(s string) (*regexp.Regexp, error) {
-	expr := prepareNFExpr(s)
-	rgx, err := regexp.Compile(expr)
-	if err != nil {
-		return nil, err
-	}
-
-	return rgx, nil
+	return runtime.OFDecoder(buf)
 }

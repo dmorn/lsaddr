@@ -1,5 +1,3 @@
-// +build linux
-
 // Copyright © 2019 booster authors
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,16 +13,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package internal
+package internal_test
 
 import (
-	"gopkg.in/pipe.v2"
+	"testing"
 )
 
-var runtime = Runtime{
-	OFCmd:     pipe.Exec("lsof", "-i", "-n", "-P"),
-	OFDecoder: DecodeLsofOutput,
-	PrepareNFExprFunc: func(s string) string {
-		return s
-	},
-}

@@ -150,12 +150,25 @@ svchost.exe                   1104 Services                   0     28,428 K
 WUDFHost.exe                  1240 Services                   0      6,888 K
 `
 
-// Private helpers
-
-func assert(t *testing.T, exp, x string) {
-	if exp != x {
-		t.Fatalf("Assert failed: expected %s, found %s", exp, x)
+func TestDecodeTasklistOutput(t *testing.T) {
+	buf := bytes.NewBufferString(tasklistExample)
+	ll, err := internal.DecodeTasklistOutput(buf)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
 	}
+	if len(ll) != 17 {
+		t.Fatalf("Unexpected ll length: wanted 17, found: %d: %v", len(ll), ll)
+	}
+}
+
+func TestUnmarshalTasklistLine(t *testing.T) {
+	line := "smss.exe                       296 Services                   0      1,008 K"
+	task, err := internal.UnmarshalTasklistLine(line)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	assert(t, "smss.exe", task.Image)
+	assert(t, "296", task.Pid)
 }
 
 // Plist
@@ -201,3 +214,12 @@ func TestExtractAppName(t *testing.T) {
 		t.Fatalf("Unexpected name: found %s, wanted %s", name, exp)
 	}
 }
+
+// Private helpers
+
+func assert(t *testing.T, exp, x string) {
+	if exp != x {
+		t.Fatalf("Assert failed: expected %s, found %s", exp, x)
+	}
+}
+
