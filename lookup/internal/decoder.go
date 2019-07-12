@@ -183,6 +183,15 @@ func (t *Task) String() string {
 	return fmt.Sprintf("{Image: %s, Pid: %v}", t.Image, t.Pid)
 }
 
+// DecodeTasklistOutput expects "r" to contain the output of
+// a ``tasklist'' call. The output is splitted into lines, and
+// each line that ``UnmarshakTasklistLine'' is able to Unmarshal is
+// appended to the final output, with the expections of the first lines
+// that come before the separator line composed by only "=". Those lines
+// are considered part of the "header".
+//
+// As of ``DecodeLsofOutput'', this function returns an error only
+// if reading from "r" produces an error different from ``io.EOF''.
 func DecodeTasklistOutput(r io.Reader) ([]*Task, error) {
 	ll := []*Task{}
 	delim := "="
@@ -208,6 +217,19 @@ func DecodeTasklistOutput(r io.Reader) ([]*Task, error) {
 	return ll, err
 }
 
+// UnmarshalTasklistLine expectes "line" to be a single line output from
+// ``tasklist'' call. The line is unmarshaled into a ``Task''
+// only if is splittable by " " into a slice of at least 5 items. "line" should
+// not end with a "\n" delimitator, otherwise it will end up in the last
+// unmarshaled item.
+// The "header" lines (see below) should not be passed to this function.
+//
+// Example header:
+// Image Name                     PID Session Name        Session#    Mem Usage
+// ========================= ======== ================ =========== ============
+//
+// Example line:
+// svchost.exe                    940 Services                   0     52,336 K
 func UnmarshalTasklistLine(line string) (*Task, error) {
 	chunks, err := chunkLine(line, " ", 5)
 	if err != nil {

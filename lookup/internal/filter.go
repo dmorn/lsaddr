@@ -39,6 +39,8 @@ func BuildNFFilter(s string) (*regexp.Regexp, error) {
 	return rgx, nil
 }
 
+// PidsFromTasks takes "tasks", iterates over them and groups all ``Pid''
+// fields that have the same ``Image'' field, equal to "image".
 func PidsFromTasks(tasks []*Task, image string) []string {
 	pids := []string{}
 	for _, v := range tasks {

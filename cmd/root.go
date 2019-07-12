@@ -80,7 +80,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "print debug information to stderr")
-	rootCmd.PersistentFlags().StringVarP(&output, "out", "o", "bpf", "select output produced")
+	rootCmd.PersistentFlags().StringVarP(&output, "out", "o", "csv", "select output produced")
 }
 
 func writeOutputTo(w io.Writer, output string, ff []lookup.NetFile) error {
