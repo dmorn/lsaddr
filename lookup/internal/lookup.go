@@ -1,5 +1,3 @@
-// +build darwin
-
 // Copyright © 2019 booster authors
 //
 // This program is free software: you can redistribute it and/or modify
@@ -19,31 +17,36 @@ package internal
 
 import (
 	"bytes"
-	"fmt"
 	"io"
+	"log"
+	"regexp"
 
-	"howett.net/plist"
+	"gopkg.in/pipe.v2"
 )
 
-// ExtractAppName is used to find the value of the "CFBundleExecutable" key.
-// "r" is expected to be an ".plist" encoded file.
-func ExtractAppName(r io.Reader) (string, error) {
-	rs, ok := r.(io.ReadSeeker)
-	if !ok {
-		var buf bytes.Buffer
-		if _, err := io.Copy(&buf, r); err != nil {
-			return "", err
-		}
-		fmt.Printf("Buffer length: %d\n", buf.Len())
-		rs = bytes.NewReader(buf.Bytes())
+var Logger *log.Logger
+
+type Runtime struct {
+	OFCmd pipe.Pipe // Open Files Command
+	OFDecoder func(io.Reader) ([]*OpenFile, error) // Open Files Decoder
+	PrepareNFExprFunc func(string) string
+}
+
+// OpenNetFiles uses ``lsof'' (or its platform dependent equivalent) to find
+// the list of open network files. It then filters the result using "rgx":
+// each line that does not match is discarded.
+func OpenNetFiles(rgx *regexp.Regexp) ([]*OpenFile, error) {
+	p := pipe.Line(
+		runtime.OFCmd,
+		pipe.Filter(func(line []byte) bool {
+			return rgx.Match(line)
+		}),
+	)
+	output, err := pipe.Output(p)
+	if err != nil {
+		return []*OpenFile{}, err
 	}
 
-	var data struct {
-		Name string `plist:"CFBundleExecutable"`
-	}
-	if err := plist.NewDecoder(rs).Decode(&data); err != nil {
-		return "", err
-	}
-
-	return data.Name, nil
+	buf := bytes.NewBuffer(output)
+	return runtime.OFDecoder(buf)
 }

@@ -1,5 +1,3 @@
-// +build darwin linux
-
 // Copyright © 2019 booster authors
 //
 // This program is free software: you can redistribute it and/or modify
@@ -24,6 +22,8 @@ import (
 	"github.com/booster-proj/lsaddr/lookup/internal"
 )
 
+// Lsof
+
 func TestUnmarshalLsofLine(t *testing.T) {
 	line := "Spotify   11778 danielmorandini  128u  IPv4 0x25c5bf09993eff03      0t0  TCP 192.168.0.61:51291->35.186.224.47:https (ESTABLISHED)"
 	f, err := internal.UnmarshalLsofLine(line)
@@ -31,33 +31,15 @@ func TestUnmarshalLsofLine(t *testing.T) {
 		t.Fatalf("Unexpcted error: %v", err)
 	}
 
-	if f.Command != "Spotify" {
-		t.Fatalf("Unexpected %v", f.Command)
-	}
-	if f.Pid != "11778" {
-		t.Fatalf("Unexpected %v", f.Pid)
-	}
-	if f.User != "danielmorandini" {
-		t.Fatalf("Unexpected %v", f.User)
-	}
-	if f.Fd != "128u" {
-		t.Fatalf("Unexpected %v", f.Fd)
-	}
-	if f.Type != "IPv4" {
-		t.Fatalf("Unexpected %v", f.Type)
-	}
-	if f.Device != "0x25c5bf09993eff03" {
-		t.Fatalf("Unexpected %v", f.Device)
-	}
-	if f.Node != "TCP" {
-		t.Fatalf("Unexpected %v", f.Node)
-	}
-	if f.Name != "192.168.0.61:51291->35.186.224.47:https" {
-		t.Fatalf("Unexpected %v", f.Name)
-	}
-	if f.State != "(ESTABLISHED)" {
-		t.Fatalf("Unexpected %v", f.State)
-	}
+	assert(t, "Spotify", f.Command)
+	assert(t, "11778", f.Pid)
+	assert(t, "danielmorandini", f.User)
+	assert(t, "128u", f.Fd)
+	assert(t, "IPv4", f.Type)
+	assert(t, "0x25c5bf09993eff03", f.Device)
+	assert(t, "TCP", f.Node)
+	assert(t, "192.168.0.61:51291->35.186.224.47:https", f.Name)
+	assert(t, "(ESTABLISHED)", f.State)
 }
 
 const lsofExample = `Dropbox     614 danielmorandini  236u  IPv4 0x25c5bf09a4161583      0t0  TCP 192.168.0.61:58122->162.125.66.7:https (ESTABLISHED)
@@ -104,3 +86,140 @@ func TestUnmarshalName(t *testing.T) {
 		}
 	}
 }
+
+// Netstat
+
+const netstatExample = `
+Active Connections
+
+  Proto  Local Address          Foreign Address        State           PID
+  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING       748
+  RpcSs
+ [svchost.exe]
+  TCP    0.0.0.0:445            0.0.0.0:0              LISTENING       4
+ Can not obtain ownership information
+  TCP    0.0.0.0:5357           0.0.0.0:0              LISTENING       4
+ [svchost.exe]
+  UDP    [::1]:62261            *:*                                    1036
+`
+
+func TestDecodeNetstatOutput(t *testing.T) {
+	buf := bytes.NewBufferString(netstatExample)
+	ll, err := internal.DecodeNetstatOutput(buf)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if len(ll) != 4 {
+		t.Fatalf("Unexpected ll length: wanted 4, found %d: %v", len(ll), ll)
+	}
+}
+
+func TestUnmarshalNetstatLine(t *testing.T) {
+	line := "  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING       748"
+	f, err := internal.UnmarshalNetstatLine(line)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	assert(t, "TCP", f.Node)
+	assert(t, "0.0.0.0:135->0.0.0.0:0", f.Name)
+	assert(t, "LISTENING", f.State)
+	assert(t, "748", f.Pid)
+}
+
+// Tasklist
+
+const tasklistExample = `
+Image Name                     PID Session Name        Session#    Mem Usage
+========================= ======== ================ =========== ============
+System Idle Process              0 Services                   0          4 K
+System                           4 Services                   0     15,376 K
+smss.exe                       296 Services                   0      1,008 K
+csrss.exe                      380 Services                   0      4,124 K
+wininit.exe                    452 Services                   0      4,828 K
+services.exe                   588 Services                   0      6,284 K
+lsass.exe                      596 Services                   0     12,600 K
+svchost.exe                    688 Services                   0     17,788 K
+svchost.exe                    748 Services                   0      8,980 K
+svchost.exe                    888 Services                   0     21,052 K
+svchost.exe                    904 Services                   0     21,200 K
+svchost.exe                    940 Services                   0     52,336 K
+WUDFHost.exe                   464 Services                   0      6,128 K
+svchost.exe                   1036 Services                   0     14,524 K
+svchost.exe                   1044 Services                   0     27,488 K
+svchost.exe                   1104 Services                   0     28,428 K
+WUDFHost.exe                  1240 Services                   0      6,888 K
+`
+
+func TestDecodeTasklistOutput(t *testing.T) {
+	buf := bytes.NewBufferString(tasklistExample)
+	ll, err := internal.DecodeTasklistOutput(buf)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	if len(ll) != 17 {
+		t.Fatalf("Unexpected ll length: wanted 17, found: %d: %v", len(ll), ll)
+	}
+}
+
+func TestUnmarshalTasklistLine(t *testing.T) {
+	line := "smss.exe                       296 Services                   0      1,008 K"
+	task, err := internal.UnmarshalTasklistLine(line)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	assert(t, "smss.exe", task.Image)
+	assert(t, "296", task.Pid)
+}
+
+// Plist
+
+const infoExample = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>pico8</string>
+	<key>CFBundleGetInfoString</key>
+	<string>pico8</string>
+	<key>CFBundleIconFile</key>
+	<string>pico8.icns</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.Lexaloffle.pico8</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>pico8</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>pico8</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>pico8</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.1</string>
+</dict>
+</plist>
+`
+
+func TestExtractAppName(t *testing.T) {
+	r := bytes.NewBufferString(infoExample)
+	name, err := internal.ExtractAppName(r)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	exp := "pico8"
+	if name != exp {
+		t.Fatalf("Unexpected name: found %s, wanted %s", name, exp)
+	}
+}
+
+// Private helpers
+
+func assert(t *testing.T, exp, x string) {
+	if exp != x {
+		t.Fatalf("Assert failed: expected %s, found %s", exp, x)
+	}
+}
+

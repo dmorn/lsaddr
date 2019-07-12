@@ -29,7 +29,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var Logger = log.New(os.Stderr, "[lsaddr] ", 0)
 var debug bool
 var output string
 
@@ -40,9 +39,9 @@ var rootCmd = &cobra.Command{
 	Long:  usage,
 	Args:  cobra.ExactArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		log.SetPrefix("[lsaddr] ")
 		if !debug {
-			Logger = log.New(ioutil.Discard, "", 0)
-			lookup.Logger = log.New(ioutil.Discard, "", 0)
+			log.SetOutput(ioutil.Discard)
 		}
 
 		output = strings.ToLower(output)
@@ -58,7 +57,7 @@ var rootCmd = &cobra.Command{
 			fmt.Printf("unable to find open network files for %s: %v\n", s, err)
 			os.Exit(1)
 		}
-		Logger.Printf("# of open files: %d", len(ff))
+		log.Printf("# of open files: %d", len(ff))
 
 		w := bufio.NewWriter(os.Stdout)
 		if err := writeOutputTo(w, output, ff); err != nil {
@@ -80,7 +79,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "print debug information to stderr")
-	rootCmd.PersistentFlags().StringVarP(&output, "out", "o", "bpf", "select output produced")
+	rootCmd.PersistentFlags().StringVarP(&output, "out", "o", "csv", "select output produced")
 }
 
 func writeOutputTo(w io.Writer, output string, ff []lookup.NetFile) error {

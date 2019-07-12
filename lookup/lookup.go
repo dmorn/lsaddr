@@ -18,10 +18,9 @@ package lookup
 import (
 	"log"
 	"net"
-	"os"
-)
 
-var Logger = log.New(os.Stderr, "[lookup] ", 0)
+	"github.com/booster-proj/lsaddr/lookup/internal"
+)
 
 // NetFile contains some information obtained from a network file.
 type NetFile struct {
@@ -35,15 +34,37 @@ type NetFile struct {
 // operating system: on macOS for example, if "s" ends with ".app", it
 // will be trated as the root path to an application, otherwise "s" will be
 // compiled untouched.
-// It then uses `lsof` tool to find the list of open files, filtering the list
-// taking only the lines that match against the regular expression built.
+// It then uses ``lsof'' (or its platform dependent equivalent) tool to find
+// the list of open files, filtering the list taking only the lines that
+// match against the regular expression built.
 func OpenNetFiles(s string) ([]NetFile, error) {
-	rgx, err := buildRgx(s)
+	rgx, err := internal.BuildNFFilter(s)
 	if err != nil {
 		return []NetFile{}, err
 	}
 
-	return openNetFiles(rgx)
+	log.Printf("regexp built: \"%s\"", rgx.String())
+
+	ll, err := internal.OpenNetFiles(rgx)
+	if err != nil {
+		return []NetFile{}, err
+	}
+
+	// map ``internal.OpenFile'' to ``NetFile''
+	ff := make([]NetFile, len(ll))
+	for i, v := range ll {
+		src, dst := v.UnmarshalName()
+		cmd := v.Command
+		if cmd == "" {
+			cmd = s
+		}
+		ff[i] = NetFile{
+			Command: cmd,
+			Src:     src,
+			Dst:     dst,
+		}
+	}
+	return ff, nil
 }
 
 // Hosts returns the list of source and destination addresses contained

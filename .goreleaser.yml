@@ -16,6 +16,7 @@ builds:
     goos:
       - darwin
       - linux
+      - windows
 sign:
   artifacts: checksum
 changelog:

@@ -15,8 +15,16 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package lookup
+package internal
 
-func prepareExpr(s string) (string, error) {
-	return s, nil
+import (
+	"gopkg.in/pipe.v2"
+)
+
+var runtime = Runtime{
+	OFCmd:     pipe.Exec("lsof", "-i", "-n", "-P"),
+	OFDecoder: DecodeLsofOutput,
+	PrepareNFExprFunc: func(s string) string {
+		return s
+	},
 }

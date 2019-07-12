@@ -7,20 +7,17 @@
 #### Supported OS
 - `macOS`
 - `linux`
+- `windows` (**NEW** 💥)
 
-#### Dependencies
-```
-$ lsof -v
-lsof version information:
-    revision: 4.89
-    latest revision: ftp://lsof.itap.purdue.edu/pub/tools/unix/lsof/
-    latest FAQ: ftp://lsof.itap.purdue.edu/pub/tools/unix/lsof/FAQ
-    latest man page: ftp://lsof.itap.purdue.edu/pub/tools/unix/lsof/lsof_man
-    configuration info: libproc-based
-    Anyone can list all files.
-    /dev warnings are disabled.
-    Kernel ID check is disabled.
-```
+#### External dependencies
+OS | Dep | Notes
+------|------|------
+**macOS** | `lsof` | (tested revision: 4.89)
+**macOS** | `pgrep` |
+**Linux** | `lsof` |
+**Windows** | `netstat` |
+**Windows** | `tasklist` |
+
 ## Installation
 Choose one
 - `go get -u github.com/booster-proj/lsaddr`
@@ -34,96 +31,81 @@ The idea is to easily filter the list of open network files of a specific applic
 the lines that match against it are kept, the others discarded. You can pass to `lsaddr` either directly the regex, or the root folder of the
 target app (supported only on macOS for now). Check out some examples:
 
+
+#### Example #1
+"Spotify" is used as a regular expression.
 ```
-lsaddr (master) $ bin/lsaddr Spotify --out=csv
+$ bin/lsaddr Spotify
 COMMAND,NET,SRC,DST
-Spotify,tcp,192.168.0.98:59315,104.199.64.253:80
-Spotify,udp,*:57621,
+Spotify,tcp,192.168.0.98:54862,104.199.64.69:4070
 Spotify,tcp,*:57621,
-Spotify,tcp,*:61357,
-Spotify,tcp,192.168.0.98:61340,2.16.186.91:80
-Spotify,udp,*:1900,
-Spotify,udp,*:63319,
-Spotify,udp,*:55092,
-Spotify,tcp,192.168.0.98:61342,2.16.186.11:443
-Spotify,tcp,192.168.0.98:61360,192.121.140.177:443
-Spotify,tcp,192.168.0.98:61344,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61343,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61350,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61345,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61346,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61347,151.101.112.246:443
-Spotify,tcp,192.168.0.98:59355,35.186.224.53:443
-Spotify,tcp,192.168.0.98:59360,35.186.224.47:443
-Spotify,tcp,192.168.0.98:61348,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61349,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61351,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61352,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61353,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61361,192.121.140.177:443
-```
-Note: "Spotify" is used as a regular expression.
-```
-lsaddr (master) $ bin/lsaddr /Applications/Spotify.app/ --out=csv
-COMMAND,NET,SRC,DST
-Spotify,tcp,192.168.0.98:59315,104.199.64.253:80
+Spotify,tcp,*:54850,
 Spotify,udp,*:57621,
-Spotify,tcp,*:57621,
-Spotify,tcp,*:61357,
-Spotify,tcp,192.168.0.98:61340,2.16.186.91:80
 Spotify,udp,*:1900,
-Spotify,udp,*:63319,
-Spotify,udp,*:55092,
-Spotify,tcp,192.168.0.98:61344,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61343,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61350,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61345,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61346,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61347,151.101.112.246:443
-Spotify,tcp,192.168.0.98:59355,35.186.224.53:443
-Spotify,tcp,192.168.0.98:59360,35.186.224.47:443
-Spotify,tcp,192.168.0.98:61348,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61349,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61351,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61352,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61353,151.101.112.246:443
+Spotify,udp,*:61152,
+Spotify,udp,*:51535,
+Spotify,tcp,192.168.0.98:54878,35.186.224.47:443
+Spotify,tcp,192.168.0.98:54872,35.186.224.53:443
 ```
-Note: "/Applications/Spotify.app" is used to find the application's name, then its
+
+#### Example #2
+"/Applications/Spotify.app" is used to find the application's name, then its
 process identifiers are used to build the regular expression.
 ```
-lsaddr (master) $ bin/lsaddr /Applications/Spotify.app/ --out=csv --debug
-[lookup] app name: Spotify, path: /Applications/Spotify.app
-[lsaddr] # of open files: 21
+$ bin/lsaddr /Applications/Spotify.app/
 COMMAND,NET,SRC,DST
-Spotify,tcp,192.168.0.98:59315,104.199.64.253:80
-Spotify,udp,*:57621,
+Spotify,tcp,192.168.0.98:54862,104.199.64.69:4070
 Spotify,tcp,*:57621,
-Spotify,tcp,*:61357,
-Spotify,tcp,192.168.0.98:61340,2.16.186.91:80
+Spotify,tcp,*:54850,
+Spotify,udp,*:57621,
 Spotify,udp,*:1900,
-Spotify,udp,*:63319,
-Spotify,udp,*:55092,
-Spotify,tcp,192.168.0.98:61344,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61343,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61350,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61345,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61346,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61347,151.101.112.246:443
-Spotify,tcp,192.168.0.98:59355,35.186.224.53:443
-Spotify,tcp,192.168.0.98:59360,35.186.224.47:443
-Spotify,tcp,192.168.0.98:61348,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61349,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61351,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61352,151.101.112.246:443
-Spotify,tcp,192.168.0.98:61353,151.101.112.246:443
+Spotify,udp,*:61152,
+Spotify,udp,*:51535,
+Spotify,tcp,192.168.0.98:54878,35.186.224.47:443
+Spotify,tcp,192.168.0.98:54872,35.186.224.53:443
 ```
-Note: `--debug` information is printed to `stderr`, command's output to `stdout`.
+
+#### Example #3
+`--debug` information is printed to `stderr`, command's output to `stdout`.
 ```
-lsaddr (master) $ bin/lsaddr /Applications/Spotify.app/ --out=bpf
-host 104.199.64.253 or 2.16.186.91 or 151.101.112.246 or 35.186.224.53 or 35.186.224.47
+$ bin/lsaddr /Applications/Spotify.app/ --debug
+[lsaddr] 2019/07/12 14:29:50 app name: Spotify, path: /Applications/Spotify.app
+[lsaddr] 2019/07/12 14:29:50 regexp built: "48042|48044|48045|48047"
+[lsaddr] 2019/07/12 14:29:50 # of open files: 9
+COMMAND,NET,SRC,DST
+Spotify,tcp,192.168.0.98:54862,104.199.64.69:4070
+Spotify,tcp,*:57621,
+Spotify,tcp,*:54850,
+Spotify,udp,*:57621,
+Spotify,udp,*:1900,
+Spotify,udp,*:61152,
+Spotify,udp,*:51535,
+Spotify,tcp,192.168.0.98:54878,35.186.224.47:443
+Spotify,tcp,192.168.0.98:54872,35.186.224.53:443
 ```
-Notes:
+
+#### Example #4
 - you can encode the output either in csv or as a [bpf](https://en.wikipedia.org/wiki/Berkeley_Packet_Filter) (hint: very useful for packet capturing tools). 
 - only the unique destination addresses are taken into consideration when building the filter,
 ignoring the ports and without specifing if the "direction" (incoming or outgoing) that we want to
 filter. This is because the expected behaviour has not yet been defined.
+```
+$ bin/lsaddr /Applications/Spotify.app/ --out=bpf
+host 104.199.64.69 or 35.186.224.47 or 35.186.224.53
+```
+#### Example #5
+At the moment on Windows you can pass the absulute path of the program you want (or straight `<program>.exe`)
+to analyze.
+```
+> lsaddr.exe "chrome.exe"
+COMMAND,NET,SRC,DST
+chrome.exe,tcp,10.211.55.3:50551,216.58.205.163:443
+chrome.exe,tcp,10.211.55.3:50556,216.58.205.195:443
+chrome.exe,tcp,10.211.55.3:50558,216.58.205.67:443
+chrome.exe,tcp,10.211.55.3:50567,216.58.205.106:443
+chrome.exe,udp,0.0.0.0:5353,*:*
+chrome.exe,udp,0.0.0.0:5353,*:*
+chrome.exe,udp,0.0.0.0:5353,*:*
+chrome.exe,udp,[::]:5353,*:*
+chrome.exe,udp,[::]:5353,*:*
+```
