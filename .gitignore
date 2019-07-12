@@ -16,5 +16,6 @@ dist/
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-# vim
+# misc
 *.swp
+.DS_Store
