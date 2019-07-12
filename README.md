@@ -10,16 +10,13 @@
 - `windows` (**NEW** 💥)
 
 #### Dependencies
-##### macOS
-- `lsof` (tested revision: 4.89)
-- `pgrep`
-
-##### Linux
--  `lsof`
-
-##### Windows
-- `netstat`
-- `tasklist`
+OS | Dep | Notes
+------|------|------
+**macOS** | `lsof` | (tested revision: 4.89)
+**macOS** | `pgrep` |
+**Linux** | `lsof` |
+**Windows** | `netstat` |
+**Windows** | `tasklist` |
 
 ## Installation
 Choose one
