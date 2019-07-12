@@ -123,14 +123,18 @@ func pids(proc string) []string {
 // Windows helpers
 
 func prepareNFExprWin(s string) string {
+	// TODO: what if "s" is a symlink?
 	if !strings.HasSuffix(s, ".exe") {
 		// we're not able to use something that is not
 		// an executable name.
+		log.Printf("\"%s\" does not lead to an .exe", s)
 		return s
 	}
-
-	// TODO: what if "s" is a path? Only its last component
-	// is required.
+	if _, err := os.Stat(s); err == nil {
+		// take only last path component
+		log.Printf("Taking only last path component of \"%s\"", s)
+		s = filepath.Base(s)
+	}
 
 	tasks := tasks(s)
 	if len(tasks) == 0 {
