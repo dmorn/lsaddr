@@ -21,6 +21,7 @@ import (
 	"strings"
 	"path/filepath"
 	"regexp"
+	"log"
 
 	"gopkg.in/pipe.v2"
 )
@@ -75,15 +76,15 @@ func prepareNFExprDarwin(s string) string {
 	// of an application.
 	name, err := appName(path)
 	if err != nil {
-		Logger.Printf("unable to find app name: %v", err)
+		log.Printf("unable to find app name: %v", err)
 		return s
 	}
-	Logger.Printf("app name: %s, path: %s", name, path)
+	log.Printf("app name: %s, path: %s", name, path)
 
 	// Find process identifier associated with this app.
 	pids := pids(name)
 	if len(pids) == 0 {
-		Logger.Printf("cannot find any PID associated with %s", name)
+		log.Printf("cannot find any PID associated with %s", name)
 		return s
 	}
 
@@ -108,7 +109,7 @@ func pids(proc string) []string {
 	p := pipe.Exec("pgrep", proc)
 	output, err := pipe.Output(p)
 	if err != nil {
-		Logger.Printf("unable to find pids with pgrep: %v", err)
+		log.Printf("unable to find pids with pgrep: %v", err)
 		return []string{}
 	}
 
@@ -133,12 +134,12 @@ func prepareNFExprWin(s string) string {
 
 	tasks := tasks(s)
 	if len(tasks) == 0 {
-		Logger.Printf("cannot find any task associated with %s", s)
+		log.Printf("cannot find any task associated with %s", s)
 		return s
 	}
 	pids := PidsFromTasks(tasks, s)
 	if len(pids) == 0 {
-		Logger.Printf("cannot find any PID associated with %s", s)
+		log.Printf("cannot find any PID associated with %s", s)
 		return s
 	}
 
@@ -152,14 +153,14 @@ func tasks(image string) []*Task {
 	p := pipe.Exec("tasklist")
 	output, err := pipe.Output(p)
 	if err != nil {
-		Logger.Printf("unable to execute tasklist: %v", err)
+		log.Printf("unable to execute tasklist: %v", err)
 		return empty
 	}
 
 	r := bytes.NewReader(output)
 	tasks, err := DecodeTasklistOutput(r)
 	if err != nil {
-		Logger.Printf("unable to decode tasklist's output: %v", err)
+		log.Printf("unable to decode tasklist's output: %v", err)
 		return empty
 	}
 	return tasks

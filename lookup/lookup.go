@@ -18,16 +18,9 @@ package lookup
 import (
 	"log"
 	"net"
-	"os"
 
 	"github.com/booster-proj/lsaddr/lookup/internal"
 )
-
-var Logger = log.New(os.Stderr, "[lookup] ", 0)
-
-func init() {
-	internal.Logger = Logger
-}
 
 // NetFile contains some information obtained from a network file.
 type NetFile struct {
@@ -50,7 +43,7 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 		return []NetFile{}, err
 	}
 
-	Logger.Printf("regexp built: \"%s\"", rgx.String())
+	log.Printf("regexp built: \"%s\"", rgx.String())
 
 	ll, err := internal.OpenNetFiles(rgx)
 	if err != nil {
