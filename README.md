@@ -93,3 +93,19 @@ filter. This is because the expected behaviour has not yet been defined.
 $ bin/lsaddr /Applications/Spotify.app/ --out=bpf
 host 104.199.64.69 or 35.186.224.47 or 35.186.224.53
 ```
+#### Example #5
+At the moment on Windows you can pass the absulute path of the program you want (or straight `<program>.exe`)
+to analyze.
+```
+> lsaddr.exe "chrome.exe"
+COMMAND,NET,SRC,DST
+chrome.exe,tcp,10.211.55.3:50551,216.58.205.163:443
+chrome.exe,tcp,10.211.55.3:50556,216.58.205.195:443
+chrome.exe,tcp,10.211.55.3:50558,216.58.205.67:443
+chrome.exe,tcp,10.211.55.3:50567,216.58.205.106:443
+chrome.exe,udp,0.0.0.0:5353,*:*
+chrome.exe,udp,0.0.0.0:5353,*:*
+chrome.exe,udp,0.0.0.0:5353,*:*
+chrome.exe,udp,[::]:5353,*:*
+chrome.exe,udp,[::]:5353,*:*
+```
