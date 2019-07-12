@@ -7,20 +7,20 @@
 #### Supported OS
 - `macOS`
 - `linux`
+- `windows` (**NEW** 💥)
 
 #### Dependencies
-```
-$ lsof -v
-lsof version information:
-    revision: 4.89
-    latest revision: ftp://lsof.itap.purdue.edu/pub/tools/unix/lsof/
-    latest FAQ: ftp://lsof.itap.purdue.edu/pub/tools/unix/lsof/FAQ
-    latest man page: ftp://lsof.itap.purdue.edu/pub/tools/unix/lsof/lsof_man
-    configuration info: libproc-based
-    Anyone can list all files.
-    /dev warnings are disabled.
-    Kernel ID check is disabled.
-```
+##### macOS
+- `lsof` (tested revision: 4.89)
+- `pgrep`
+
+##### Linux
+-  `lsof`
+
+##### Windows
+- `netstat`
+- `tasklist`
+
 ## Installation
 - `go get -u github.com/booster-proj/lsaddr`
 - downloading the [downloader script](https://raw.githubusercontent.com/booster-proj/lsaddr/master/godownloader.sh) and executing it (you can also specify the version that you want to download as argument)
