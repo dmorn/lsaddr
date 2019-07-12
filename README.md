@@ -9,7 +9,7 @@
 - `linux`
 - `windows` (**NEW** 💥)
 
-#### Dependencies
+#### External dependencies
 OS | Dep | Notes
 ------|------|------
 **macOS** | `lsof` | (tested revision: 4.89)
