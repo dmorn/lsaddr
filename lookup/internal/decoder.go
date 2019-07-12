@@ -17,10 +17,13 @@ package internal
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"net"
 	"strings"
+
+	"howett.net/plist"
 )
 
 // Lsof section
@@ -41,11 +44,11 @@ func (f *OpenFile) String() string {
 	return fmt.Sprintf("{Pid: %s, Proto: %s, Conn: %s}", f.Pid, f.Node, f.Name)
 }
 
-// By default, ``lsof'' "name" output is of the form:
+// UnmarshalName unmarshals `lsof`'s name field, which by default is in the form:
 // [46][protocol][@hostname|hostaddr][:service|port]
 // but we're disabling hostname conversion with the ``-n'' option
 // and  port conversion with the ``-P'' option, so the output
-// looks like what you expect: ``addr:port->addr:port''.
+// in printed in the more decodable format: ``addr:port->addr:port''.
 func (f *OpenFile) UnmarshalName() (net.Addr, net.Addr) {
 	chunks := strings.Split(f.Name, "->")
 	if len(chunks) == 0 {
@@ -66,7 +69,16 @@ func (f *OpenFile) UnmarshalName() (net.Addr, net.Addr) {
 // Returns an error only if reading from "r" produces an error
 // different from ``io.EOF''.
 func DecodeLsofOutput(r io.Reader) ([]*OpenFile, error) {
-	return scanLines(r, UnmarshalLsofLine)
+	ll := []*OpenFile{}
+	err := scanLines(r, func(line string) {
+		f, err := UnmarshalLsofLine(line)
+		if err != nil {
+			// Skip this line
+			return
+		}
+		ll = append(ll, f)
+	})
+	return ll, err
 }
 
 // UnmarshalLsofLine expectes "line" to be a single line output from
@@ -109,7 +121,16 @@ func UnmarshalLsofLine(line string) (*OpenFile, error) {
 // As of ``DecodeLsofOutput'', this function returns an error only
 // if reading from "r" produces an error different from ``io.EOF''.
 func DecodeNetstatOutput(r io.Reader) ([]*OpenFile, error) {
-	return scanLines(r, UnmarshalNetstatLine)
+	ll := []*OpenFile{}
+	err := scanLines(r, func(line string) {
+		f, err := UnmarshalNetstatLine(line)
+		if err != nil {
+			// Skip this line
+			return
+		}
+		ll = append(ll, f)
+	})
+	return ll, err
 }
 
 // UnmarshalNetstatLine expectes "line" to be a single line output from
@@ -121,7 +142,6 @@ func DecodeNetstatOutput(r io.Reader) ([]*OpenFile, error) {
 // "line" examples:
 // "  TCP    0.0.0.0:5357           0.0.0.0:0              LISTENING       4"
 // "  UDP    [::1]:62261            *:*                                    1036"
-
 func UnmarshalNetstatLine(line string) (*OpenFile, error) {
 	chunks, err := chunkLine(line, " ", 4)
 	if err != nil {
@@ -139,7 +159,7 @@ func UnmarshalNetstatLine(line string) (*OpenFile, error) {
 
 	f := &OpenFile{
 		Node: chunks[0],
-		Name: from+"->"+to,
+		Name: from + "->" + to,
 	}
 	if len(chunks) == 4 {
 		// It means that the state field is missing
@@ -150,6 +170,54 @@ func UnmarshalNetstatLine(line string) (*OpenFile, error) {
 	}
 
 	return f, nil
+}
+
+// Tasklist
+
+type Task struct {
+	Pids  []string
+	Image string
+}
+
+func DecodeTasklistOutput(r io.Reader) ([]*Task, error) {
+	ll := []*Task{}
+	err := scanLines(r, func(line string) {
+		t, err := UnmarshalTasklistLine(line)
+		if err != nil {
+			// Skip this line
+			return
+		}
+		ll = append(ll, t)
+	})
+	return ll, err
+}
+
+func UnmarshalTasklistLine(line string) (*Task, error) {
+	return nil, nil
+}
+
+// Plist
+
+// ExtractAppName is used to find the value of the "CFBundleExecutable" key.
+// "r" is expected to be an ".plist" encoded file.
+func ExtractAppName(r io.Reader) (string, error) {
+	rs, ok := r.(io.ReadSeeker)
+	if !ok {
+		var buf bytes.Buffer
+		if _, err := io.Copy(&buf, r); err != nil {
+			return "", err
+		}
+		rs = bytes.NewReader(buf.Bytes())
+	}
+
+	var data struct {
+		Name string `plist:"CFBundleExecutable"`
+	}
+	if err := plist.NewDecoder(rs).Decode(&data); err != nil {
+		return "", err
+	}
+
+	return data.Name, nil
 }
 
 // Private helpers
@@ -171,30 +239,21 @@ func chunkLine(line string, sep string, min int) ([]string, error) {
 	return chunks, nil
 }
 
-type lineUnmarshalerFunc func(string) (*OpenFile, error)
-
-func scanLines(r io.Reader, f lineUnmarshalerFunc) ([]*OpenFile, error) {
-	ll := []*OpenFile{}
+func scanLines(r io.Reader, f func(string)) error {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
 		line = strings.Trim(line, "\n")
 		line = strings.Trim(line, "\r")
-		f, err := f(line)
-		if err != nil {
-			// Skip this line
-			continue
-		}
-		ll = append(ll, f)
+		f(line)
 	}
-	return ll, scanner.Err()
+	return scanner.Err()
 }
 
 func isValidAddress(s string) bool {
 	_, _, err := net.SplitHostPort(s)
 	return err == nil
 }
-
 
 // addr is a net.Addr implementation.
 type addr struct {
@@ -209,4 +268,3 @@ func (a addr) String() string {
 func (a addr) Network() string {
 	return a.net
 }
-

@@ -18,21 +18,27 @@ package internal
 import (
 	"bytes"
 	"io"
+	"log"
 	"regexp"
 
 	"gopkg.in/pipe.v2"
 )
 
+var Logger *log.Logger
+
 type lsofDecoderFunc func(io.Reader) ([]*OpenFile, error)
+
+type Runtime struct {
+	LsofCmd pipe.Pipe
+	LsofDecoder lsofDecoderFunc
+}
 
 // OpenNetFiles uses ``lsof'' (or its platform dependent equivalent) to find
 // the list of open network files. It then filters the result using "rgx":
 // each line that does not match is discarded.
 func OpenNetFiles(rgx *regexp.Regexp) ([]*OpenFile, error) {
-	dec := lsofDecoder()
-
 	p := pipe.Line(
-		lsofCmd(),
+		runtime.LsofCmd,
 		pipe.Filter(func(line []byte) bool {
 			return rgx.Match(line)
 		}),
@@ -43,5 +49,19 @@ func OpenNetFiles(rgx *regexp.Regexp) ([]*OpenFile, error) {
 	}
 
 	buf := bytes.NewBuffer(output)
-	return dec(buf)
+	return runtime.LsofDecoder(buf)
+}
+
+// BuildNFFilter compiles a regular expression out of "s". Some manipulation
+// may be performed on "s" before it is compiled, depending on the hosting
+// operating system: on macOS for example, if "s" ends with ".app", it
+// will be trated as the root path to an application.
+func BuildNFFilter(s string) (*regexp.Regexp, error) {
+	expr := prepareNFExpr(s)
+	rgx, err := regexp.Compile(expr)
+	if err != nil {
+		return nil, err
+	}
+
+	return rgx, nil
 }

@@ -15,48 +15,53 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package lookup
+package internal
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/booster-proj/lsaddr/lookup/internal"
 	"gopkg.in/pipe.v2"
 )
+
+var runtime = Runtime{
+	LsofCmd:     pipe.Exec("lsof", "-i", "-n", "-P"),
+	LsofDecoder: DecodeLsofOutput,
+}
 
 // prepareExpr returns "s" untouched if it does not end with ".app". In that case,
 // "s" is used as the root directory of a macOS application. The "CFBundleExecutable"
 // value of the app is searched, and used to build the an expression that will match
 // each string that contains a process identifer owned by the "target" app.
-func prepareExpr(s string) (string, error) {
+func prepareNFExpr(s string) string {
 	if _, err := os.Stat(s); err != nil {
 		// this is not a path
-		return s, nil
+		return s
 	}
 	path := strings.TrimRight(s, "/")
 	if !strings.HasSuffix(path, ".app") {
 		// it is a path, but not one that we know how to handle.
-		return s, nil
+		return s
 	}
 
 	// we suppose that "s" points to the root directory
 	// of an application.
 	name, err := appName(path)
 	if err != nil {
-		return "", err
+		Logger.Printf("unable to find app name: %v", err)
+		return s
 	}
 	Logger.Printf("app name: %s, path: %s", name, path)
 
 	// Find process identifier associated with this app.
 	pids := pids(name)
 	if len(pids) == 0 {
-		return "", fmt.Errorf("cannot find any PID associated with %s", name)
+		Logger.Printf("cannot find any PID associated with %s", name)
+		return s
 	}
 
-	return strings.Join(pids, "|"), nil
+	return strings.Join(pids, "|")
 }
 
 // appName finds the "BundeExecutable" identifier from "Info.plist" file
@@ -69,7 +74,7 @@ func appName(path string) (string, error) {
 		return "", err
 	}
 	defer f.Close()
-	return internal.ExtractAppName(f)
+	return ExtractAppName(f)
 }
 
 // pids returns the process identifiers of "proc".
@@ -77,7 +82,7 @@ func pids(proc string) []string {
 	p := pipe.Exec("pgrep", proc)
 	output, err := pipe.Output(p)
 	if err != nil {
-		Logger.Printf("%v", err)
+		Logger.Printf("unable to find pids with pgrep: %v", err)
 		return []string{}
 	}
 

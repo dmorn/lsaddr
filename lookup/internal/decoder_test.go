@@ -126,10 +126,78 @@ func TestUnmarshalNetstatLine(t *testing.T) {
 	assert(t, "748", f.Pid)
 }
 
+// Tasklist
+
+const tasklistExample = `
+Image Name                     PID Session Name        Session#    Mem Usage
+========================= ======== ================ =========== ============
+System Idle Process              0 Services                   0          4 K
+System                           4 Services                   0     15,376 K
+smss.exe                       296 Services                   0      1,008 K
+csrss.exe                      380 Services                   0      4,124 K
+wininit.exe                    452 Services                   0      4,828 K
+services.exe                   588 Services                   0      6,284 K
+lsass.exe                      596 Services                   0     12,600 K
+svchost.exe                    688 Services                   0     17,788 K
+svchost.exe                    748 Services                   0      8,980 K
+svchost.exe                    888 Services                   0     21,052 K
+svchost.exe                    904 Services                   0     21,200 K
+svchost.exe                    940 Services                   0     52,336 K
+WUDFHost.exe                   464 Services                   0      6,128 K
+svchost.exe                   1036 Services                   0     14,524 K
+svchost.exe                   1044 Services                   0     27,488 K
+svchost.exe                   1104 Services                   0     28,428 K
+WUDFHost.exe                  1240 Services                   0      6,888 K
+`
+
 // Private helpers
 
 func assert(t *testing.T, exp, x string) {
 	if exp != x {
 		t.Fatalf("Assert failed: expected %s, found %s", exp, x)
+	}
+}
+
+// Plist
+
+const infoExample = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleExecutable</key>
+	<string>pico8</string>
+	<key>CFBundleGetInfoString</key>
+	<string>pico8</string>
+	<key>CFBundleIconFile</key>
+	<string>pico8.icns</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.Lexaloffle.pico8</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>pico8</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>pico8</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>pico8</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.1</string>
+</dict>
+</plist>
+`
+
+func TestExtractAppName(t *testing.T) {
+	r := bytes.NewBufferString(infoExample)
+	name, err := internal.ExtractAppName(r)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	exp := "pico8"
+	if name != exp {
+		t.Fatalf("Unexpected name: found %s, wanted %s", name, exp)
 	}
 }

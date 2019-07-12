@@ -19,12 +19,15 @@ import (
 	"log"
 	"net"
 	"os"
-	"regexp"
 
 	"github.com/booster-proj/lsaddr/lookup/internal"
 )
 
 var Logger = log.New(os.Stderr, "[lookup] ", 0)
+
+func init() {
+	internal.Logger = Logger
+}
 
 // NetFile contains some information obtained from a network file.
 type NetFile struct {
@@ -42,7 +45,7 @@ type NetFile struct {
 // the list of open files, filtering the list taking only the lines that
 // match against the regular expression built.
 func OpenNetFiles(s string) ([]NetFile, error) {
-	rgx, err := buildRgx(s)
+	rgx, err := internal.BuildNFFilter(s)
 	if err != nil {
 		return []NetFile{}, err
 	}
@@ -75,23 +78,4 @@ func Hosts(ff []NetFile) (src, dst []net.Addr) {
 		dst = append(dst, v.Dst)
 	}
 	return
-}
-
-// Private helpers
-
-// buildRgx compiles a regular expression out of "s". Some manipulation
-// may be performed on "s" before it is compiled, depending on the hosting
-// operating system: on macOS for example, if "s" ends with ".app", it
-// will be trated as the root path to an application.
-func buildRgx(s string) (*regexp.Regexp, error) {
-	expr, err := prepareExpr(s)
-	if err != nil {
-		return nil, err
-	}
-	rgx, err := regexp.Compile(expr)
-	if err != nil {
-		return nil, err
-	}
-
-	return rgx, nil
 }
