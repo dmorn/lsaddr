@@ -54,8 +54,12 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 	ff := make([]NetFile, len(ll))
 	for i, v := range ll {
 		src, dst := v.UnmarshalName()
+		cmd := v.Command
+		if cmd == "" {
+			cmd = s
+		}
 		ff[i] = NetFile{
-			Command: v.Command,
+			Command: cmd,
 			Src:     src,
 			Dst:     dst,
 		}
