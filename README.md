@@ -31,6 +31,9 @@ The idea is to easily filter the list of open network files of a specific applic
 the lines that match against it are kept, the others discarded. You can pass to `lsaddr` either directly the regex, or the root folder of the
 target app (supported only on macOS for now). Check out some examples:
 
+
+### Example #1
+"Spotify" is used as a regular expression.
 ```
 $ bin/lsaddr Spotify
 COMMAND,NET,SRC,DST
@@ -44,7 +47,10 @@ Spotify,udp,*:51535,
 Spotify,tcp,192.168.0.98:54878,35.186.224.47:443
 Spotify,tcp,192.168.0.98:54872,35.186.224.53:443
 ```
-Note: "Spotify" is used as a regular expression.
+
+### Example #2
+"/Applications/Spotify.app" is used to find the application's name, then its
+process identifiers are used to build the regular expression.
 ```
 $ bin/lsaddr /Applications/Spotify.app/
 COMMAND,NET,SRC,DST
@@ -58,8 +64,9 @@ Spotify,udp,*:51535,
 Spotify,tcp,192.168.0.98:54878,35.186.224.47:443
 Spotify,tcp,192.168.0.98:54872,35.186.224.53:443
 ```
-Note: "/Applications/Spotify.app" is used to find the application's name, then its
-process identifiers are used to build the regular expression.
+
+### Example #3
+`--debug` information is printed to `stderr`, command's output to `stdout`.
 ```
 $ bin/lsaddr /Applications/Spotify.app/ --debug
 [lsaddr] 2019/07/12 14:29:50 app name: Spotify, path: /Applications/Spotify.app
@@ -76,13 +83,13 @@ Spotify,udp,*:51535,
 Spotify,tcp,192.168.0.98:54878,35.186.224.47:443
 Spotify,tcp,192.168.0.98:54872,35.186.224.53:443
 ```
-Note: `--debug` information is printed to `stderr`, command's output to `stdout`.
-```
-$ bin/lsaddr /Applications/Spotify.app/ --out=bpf
-host 104.199.64.69 or 35.186.224.47 or 35.186.224.53
-```
-Notes:
+
+### Example #4
 - you can encode the output either in csv or as a [bpf](https://en.wikipedia.org/wiki/Berkeley_Packet_Filter) (hint: very useful for packet capturing tools). 
 - only the unique destination addresses are taken into consideration when building the filter,
 ignoring the ports and without specifing if the "direction" (incoming or outgoing) that we want to
 filter. This is because the expected behaviour has not yet been defined.
+```
+$ bin/lsaddr /Applications/Spotify.app/ --out=bpf
+host 104.199.64.69 or 35.186.224.47 or 35.186.224.53
+```
