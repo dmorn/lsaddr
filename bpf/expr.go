@@ -26,9 +26,9 @@ type BPFer interface {
 	BPF() string
 }
 
-// Operator restrics the
 type Operator string
 
+// Supported operators
 const (
 	AND Operator = "and"
 	OR           = "or"

@@ -39,6 +39,24 @@ func TestJoin(t *testing.T) {
 			op:   bpf.AND,
 			out:  "",
 		},
+		{
+			prev: "",
+			in:   "(a)",
+			op:   bpf.AND,
+			out:  "(a)",
+		},
+		{
+			prev: "foo",
+			in:   "bar",
+			op:   bpf.AND,
+			out:  "foo and bar",
+		},
+		{
+			prev: "(foo and bar)",
+			in:   "baz",
+			op:   bpf.OR,
+			out:  "(foo and bar) or baz",
+		},
 	}
 
 	for i, v := range tt {
