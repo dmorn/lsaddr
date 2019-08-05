@@ -14,61 +14,44 @@
 
 package bpf
 
-import (
-	"net"
-	"strings"
+import "strings"
+
+// Expr represents a BPF expression. It's zero value is ready to use.
+type Expr string
+
+// BPFer is a wrapper around the BPF function.
+type BPFer interface {
+	// Implementers should return a valid Berkeley Packet Filter
+	// representation of themselves.
+	BPF() string
+}
+
+// Operator restrics the
+type Operator string
+
+const (
+	AND Operator = "and"
+	OR           = "or"
 )
 
-// Expr represents a BPF expression. It carries a string.Builder,
-// which is used to construct the string. It's zero value is ready
-// to use.
-type Expr struct {
-	strings.Builder
-}
-
-// NewExpr is just a convenience constructor.
-func NewExpr() *Expr {
-	return &Expr{}
-}
-
-// Hosts builds a new expression appending to the current one
-// an "host" filter, using `addrs` as source, deduplicated.
-func (e *Expr) Host(addrs []net.Addr) *Expr {
-	if len(addrs) == 0 {
-		return e
-	}
-
-	seen := make(map[string]bool)
-	acc := make([]string, 0, len(addrs))
-	for _, v := range addrs {
-		host, _, err := net.SplitHostPort(v.String())
-		if err != nil {
-			continue
-		}
-
-		if _, ok := seen[host]; !ok {
-			acc = append(acc, host)
-			seen[host] = true
-		}
-	}
-
-	e.WriteString("host")
-	e.WriteString(strings.Join(acc, " or "))
-	return e
+// Join returns a copy of `e`, with all `ff` filters appended
+// to the original expression, using `op` as separator.
+// Callers have to ensure that operator precedence is preserved.
+func (e Expr) Join(op Operator, f BPFer) Expr {
+	raw := join(op, string(e), f.BPF())
+	return Expr(raw)
 }
 
 // NewReader returns an io.Reader implementation, which will read
 // the BPF expression from `e`. Later modifications of `e` will not
 // affect the content of the reader.
-func (e *Expr) NewReader() *strings.Reader {
-	return strings.NewReader(e.String() + "\n")
+func (e Expr) NewReader() *strings.Reader {
+	return strings.NewReader(string(e) + "\n")
 }
 
-// WriteString appends `s` to the expression written up to now. It takes
-// care of adding leading white spaces if needed.
-func (e *Expr) WriteString(s string) (int, error) {
-	if len(e.String()) > 0 {
-		s = " " + s
+func join(op Operator, a, b string) string {
+	if len(a) > 0 {
+		return strings.Join([]string{a, string(op), b}, " ")
 	}
-	return e.Builder.WriteString(s)
+	return b
 }

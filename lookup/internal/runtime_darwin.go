@@ -22,7 +22,7 @@ import (
 )
 
 var runtime = Runtime{
-	OFCmd:     pipe.Exec("lsof", "-i", "-n", "-P"),
-	OFDecoder: DecodeLsofOutput,
+	OFCmd:             pipe.Exec("lsof", "-i", "-n", "-P"),
+	OFDecoder:         DecodeLsofOutput,
 	PrepareNFExprFunc: prepareNFExprDarwin,
 }

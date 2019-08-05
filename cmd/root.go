@@ -87,8 +87,11 @@ func writeOutputTo(w io.Writer, output string, ff []lookup.NetFile) error {
 	case "csv":
 		return encoder.NewCSV(w).Encode(ff)
 	case "bpf":
-		_, hosts := lookup.Hosts(ff)
-		_, err := io.Copy(w, bpf.NewExpr().Host(hosts).NewReader())
+		var expr bpf.Expr
+		for _, v := range ff {
+			expr = expr.Join(bpf.AND, v)
+		}
+		_, err := io.Copy(w, expr.NewReader())
 		return err
 	}
 	return nil

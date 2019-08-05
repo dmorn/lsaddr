@@ -17,11 +17,11 @@ package internal
 
 import (
 	"bytes"
+	"log"
 	"os"
-	"strings"
 	"path/filepath"
 	"regexp"
-	"log"
+	"strings"
 
 	"gopkg.in/pipe.v2"
 )

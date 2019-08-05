@@ -175,7 +175,7 @@ func UnmarshalNetstatLine(line string) (*OpenFile, error) {
 // Tasklist
 
 type Task struct {
-	Pid string
+	Pid   string
 	Image string
 }
 
@@ -237,7 +237,7 @@ func UnmarshalTasklistLine(line string) (*Task, error) {
 	}
 	return &Task{
 		Image: chunks[0],
-		Pid: chunks[1],
+		Pid:   chunks[1],
 	}, nil
 }
 

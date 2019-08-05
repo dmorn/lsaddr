@@ -29,6 +29,10 @@ type NetFile struct {
 	Dst     net.Addr // destination address
 }
 
+func (nf NetFile) BPF() string {
+	return "()"
+}
+
 // OpenNetFiles compiles a regular expression out of "s". Some manipulation
 // may be performed on "s" before it is compiled, depending on the hosting
 // operating system: on macOS for example, if "s" ends with ".app", it
@@ -65,14 +69,4 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 		}
 	}
 	return ff, nil
-}
-
-// Hosts returns the list of source and destination addresses contained
-// in `ff`.
-func Hosts(ff []NetFile) (src, dst []net.Addr) {
-	for _, v := range ff {
-		src = append(src, v.Src)
-		dst = append(dst, v.Dst)
-	}
-	return
 }
