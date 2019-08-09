@@ -90,8 +90,8 @@ Spotify,tcp,192.168.0.98:54872,35.186.224.53:443
 ignoring the ports and without specifing if the "direction" (incoming or outgoing) that we want to
 filter. This is because the expected behaviour has not yet been defined.
 ```
-$ bin/lsaddr /Applications/Spotify.app/ --out=bpf
-host 104.199.64.69 or 35.186.224.47 or 35.186.224.53
+$ bin/lsaddr /Applications/Mail.app --out=bpf
+(tcp and host 192.168.0.98 and port 58100) or (tcp and host 64.233.184.108 and port 993) or (tcp and host 192.168.0.98 and port 58100) or (tcp and host 64.233.184.108 and port 993) or (tcp and host 192.168.0.98 and port 57213) or (tcp and host 10.0.0.1 and port 993) or (tcp and host 192.168.0.98 and port 57213) or (tcp and host 10.0.0.1 and port 993) or (tcp and host 192.168.0.98 and port 57214) or (tcp and host 10.0.0.1 and port 993) or (tcp and host 192.168.0.98 and port 57214) or (tcp and host 10.0.0.1 and port 993) or (tcp and host 192.168.0.98 and port 57216) or (tcp and host 17.56.136.197 and port 993) or (tcp and host 192.168.0.98 and port 57216) or (tcp and host 17.56.136.197 and port 993) or (tcp and host 192.168.0.98 and port 57217) or (tcp and host 17.56.136.197 and port 993) or (tcp and host 192.168.0.98 and port 57217) or (tcp and host 17.56.136.197 and port 993)
 ```
 #### Example #5
 At the moment on Windows you can pass the absulute path of the program you want (or straight `<program>.exe`)
