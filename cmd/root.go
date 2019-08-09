@@ -37,7 +37,7 @@ var rootCmd = &cobra.Command{
 	Use:   "lsaddr",
 	Short: "Show a subset of all network addresses being used by the system",
 	Long:  usage,
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		log.SetPrefix("[lsaddr] ")
 		if !debug {
@@ -51,7 +51,11 @@ var rootCmd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		s := args[0]
+		var s string
+		if len(args) > 0 {
+			s = args[0]
+		}
+
 		ff, err := lookup.OpenNetFiles(s)
 		if err != nil {
 			fmt.Printf("unable to find open network files for %s: %v\n", s, err)
