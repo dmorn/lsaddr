@@ -29,10 +29,6 @@ type NetFile struct {
 	Dst     net.Addr // destination address
 }
 
-func (nf NetFile) BPF() string {
-	return "()"
-}
-
 // OpenNetFiles compiles a regular expression out of "s". Some manipulation
 // may be performed on "s" before it is compiled, depending on the hosting
 // operating system: on macOS for example, if "s" ends with ".app", it

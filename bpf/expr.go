@@ -14,32 +14,85 @@
 
 package bpf
 
-import "strings"
-
-// Expr represents a BPF expression. It's zero value is ready to use.
-type Expr string
-
-// BPFer is a wrapper around the BPF function.
-type BPFer interface {
-	// Implementers should return a valid Berkeley Packet Filter
-	// representation of themselves.
-	BPF() string
-}
+import (
+	"net"
+	"strings"
+)
 
 type Operator string
 
 // Supported operators
 const (
-	AND Operator = "and"
-	OR           = "or"
+	AND  Operator = "and"
+	OR            = "or"
+	NOOP          = ""
 )
 
-// Join returns a copy of `e`, with all `ff` filters appended
-// to the original expression, using `op` as separator.
+type Dir string
+
+const (
+	SRC   Dir = "src"
+	DST       = "dst"
+	NODIR     = ""
+)
+
+// Expr represents a BPF expression. It's zero value is ready to use.
+type Expr string
+
+// Join returns a new expression, made of the conjunction of the
+// caller with `r`, wrapped in an Expr.
 // Callers have to ensure that operator precedence is preserved.
-func (e Expr) Join(op Operator, f BPFer) Expr {
-	raw := join(op, string(e), f.BPF())
+func (l Expr) Join(r string) Expr {
+	raw := join(NOOP, string(l), r)
 	return Expr(raw)
+}
+
+// And works as `Join`, but uses "and" to join the two expressions.
+func (l Expr) And(r string) Expr {
+	raw := join(AND, string(l), r)
+	return Expr(raw)
+}
+
+// Or is the same as `And`, but with "or".
+func (l Expr) Or(r string) Expr {
+	raw := join(OR, string(l), r)
+	return Expr(raw)
+}
+
+// Wrap surrounds `e` with ().
+func (e Expr) Wrap() Expr {
+	return Expr("(" + string(e) + ")")
+}
+
+// FromAddr returns a BPF from a network address, plus direction
+// information. Use NODIR to make a filter that matches both src and
+// dst packets.
+func FromAddr(d Dir, addr net.Addr) Expr {
+	if addr.String() == "" {
+		return Expr("")
+	}
+
+	expr := Expr(addr.Network()) // <udp, tcp>
+	addrExpr := fromAddr(addr)
+
+	if d == NODIR {
+		return expr.And(string(addrExpr))
+	}
+	return expr.And(string(d)).Join(string(addrExpr)) // and <src, dst>
+}
+
+func fromAddr(addr net.Addr) Expr {
+	var expr Expr
+	host, port, err := net.SplitHostPort(addr.String())
+
+	switch {
+	case err != nil:
+		return expr.Join("host " + addr.String())
+	case host == "*":
+		return expr.Join("port " + port)
+	default:
+		return expr.Join("host " + host).And("port " + port)
+	}
 }
 
 // NewReader returns an io.Reader implementation, which will read
@@ -50,8 +103,18 @@ func (e Expr) NewReader() *strings.Reader {
 }
 
 func join(op Operator, a, b string) string {
-	if len(a) > 0 {
+	// validate input
+	if len(a) == 0 && b != "()" {
+		return b
+	}
+	if len(b) == 0 || b == "()" {
+		return a
+	}
+
+	switch op {
+	case NOOP:
+		return strings.Join([]string{a, b}, " ")
+	default:
 		return strings.Join([]string{a, string(op), b}, " ")
 	}
-	return b
 }
