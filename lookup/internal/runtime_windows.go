@@ -22,7 +22,7 @@ import (
 )
 
 var runtime = Runtime{
-	OFCmd:     pipe.Exec("netstat", "-ano"),
-	OFDecoder: DecodeNetstatOutput,
+	OFCmd:             pipe.Exec("netstat", "-ano"),
+	OFDecoder:         DecodeNetstatOutput,
 	PrepareNFExprFunc: prepareNFExprWin,
 }

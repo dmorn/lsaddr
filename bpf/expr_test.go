@@ -15,35 +15,101 @@
 package bpf_test
 
 import (
+	"net/url"
 	"testing"
-	"net"
 
 	"github.com/booster-proj/lsaddr/bpf"
-	"github.com/booster-proj/lsaddr/lookup"
 )
 
-func TestHost(t *testing.T) {
-	src, dst := lookup.Hosts(netFiles0) // split src and destination addresses
+func TestJoin(t *testing.T) {
+	tt := []struct {
+		prev string
+		in   string
+		out  string
+	}{
+		{prev: "", in: "", out: ""},
+		{prev: "", in: "(a)", out: "(a)"},
+		{prev: "", in: "()", out: ""},
+		{prev: "foo", in: "bar", out: "foo bar"},
+		{prev: "(foo and bar)", in: "baz", out: "(foo and bar) baz"},
+	}
 
-	validateExpr(t, bpf.NewExpr().Host(src), "host 192.168.0.61 or ::1")
-	validateExpr(t, bpf.NewExpr().Host(dst), "host 52.94.218.7 or ::1")
-}
-
-func validateExpr(t *testing.T, e *bpf.Expr, expected string) {
-	if e.String() != expected {
-		t.Fatalf("Unexpected bpf expression: wanted \"%s\", found \"%v\"", expected, e)
+	for i, v := range tt {
+		expr := bpf.Expr(v.prev).Join(v.in)
+		if string(expr) != v.out {
+			t.Fatalf("%d: unexpected expression: expected \"%v\", found \"%v\"", i, v.out, expr)
+		}
 	}
 }
 
-var netFiles0 = []lookup.NetFile{
-	{"foo", newUDPAddr("192.168.0.61:54104"), newUDPAddr("52.94.218.7:443")},
-	{"bar", newUDPAddr("[::1]:60051"), newUDPAddr("[::1]:60052")},
+func TestFromAddr(t *testing.T) {
+	tt := []struct {
+		addr string
+		dir  bpf.Dir
+		bpf  string
+	}{
+		// #0
+		{
+			addr: "",
+			dir:  bpf.NODIR,
+			bpf:  "",
+		},
+		{
+			addr: "udp://localhost:1",
+			dir:  bpf.SRC,
+			bpf:  "udp and src host localhost and port 1",
+		},
+		// #2
+		{
+			addr: "tcp://left:1",
+			dir:  bpf.DST,
+			bpf:  "tcp and dst host left and port 1",
+		},
+		{
+			addr: "tcp://localhost:3333",
+			dir:  bpf.NODIR,
+			bpf:  "tcp and host localhost and port 3333",
+		},
+		// #4
+		{
+			addr: "ip://172.31.11.33",
+			dir:  bpf.NODIR,
+			bpf:  "ip and host 172.31.11.33",
+		},
+		{
+			addr: "tcp://*:57621",
+			dir:  bpf.NODIR,
+			bpf:  "tcp and port 57621",
+		},
+	}
+	for i, v := range tt {
+		addr := newAddr(v.addr)
+		expr := bpf.FromAddr(v.dir, addr)
+		if string(expr) != v.bpf {
+			t.Fatalf("%d: expected \"%v\", found \"%v\"", i, v.bpf, expr)
+		}
+	}
 }
 
-func newUDPAddr(address string) net.Addr {
-	addr, err := net.ResolveUDPAddr("udp", address)
+func newAddr(s string) addr {
+	url, err := url.Parse(s)
 	if err != nil {
 		panic(err)
 	}
-	return addr
+
+	return addr{
+		net:  url.Scheme,
+		host: url.Host,
+	}
+}
+
+type addr struct {
+	net, host string
+}
+
+func (a addr) Network() string {
+	return a.net
+}
+func (a addr) String() string {
+	return a.host
 }

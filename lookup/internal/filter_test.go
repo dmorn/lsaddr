@@ -42,7 +42,7 @@ func TestPidsFromTasks(t *testing.T) {
 func newTask(image, pid string) *internal.Task {
 	return &internal.Task{
 		Image: image,
-		Pid: pid,
+		Pid:   pid,
 	}
 }
 

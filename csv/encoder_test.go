@@ -13,21 +13,21 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package encoder_test
+package csv_test
 
 import (
 	"net"
 	"strings"
 	"testing"
 
-	"github.com/booster-proj/lsaddr/encoder"
+	"github.com/booster-proj/lsaddr/csv"
 	"github.com/booster-proj/lsaddr/lookup"
 )
 
 func TestEncode_CSV(t *testing.T) {
 	l := netFiles0
 	var w strings.Builder
-	if err := encoder.NewCSV(&w).Encode(l); err != nil {
+	if err := csv.NewEncoder(&w).Encode(l); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 

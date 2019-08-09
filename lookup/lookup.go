@@ -66,13 +66,3 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 	}
 	return ff, nil
 }
-
-// Hosts returns the list of source and destination addresses contained
-// in `ff`.
-func Hosts(ff []NetFile) (src, dst []net.Addr) {
-	for _, v := range ff {
-		src = append(src, v.Src)
-		dst = append(dst, v.Dst)
-	}
-	return
-}

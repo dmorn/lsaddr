@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	"github.com/booster-proj/lsaddr/bpf"
-	"github.com/booster-proj/lsaddr/encoder"
+	"github.com/booster-proj/lsaddr/csv"
 	"github.com/booster-proj/lsaddr/lookup"
 	"github.com/spf13/cobra"
 )
@@ -85,10 +85,15 @@ func init() {
 func writeOutputTo(w io.Writer, output string, ff []lookup.NetFile) error {
 	switch output {
 	case "csv":
-		return encoder.NewCSV(w).Encode(ff)
+		return csv.NewEncoder(w).Encode(ff)
 	case "bpf":
-		_, hosts := lookup.Hosts(ff)
-		_, err := io.Copy(w, bpf.NewExpr().Host(hosts).NewReader())
+		var expr bpf.Expr
+		for _, v := range ff {
+			src := string(bpf.FromAddr(bpf.NODIR, v.Src).Wrap())
+			dst := string(bpf.FromAddr(bpf.NODIR, v.Dst).Wrap())
+			expr = expr.Or(src).Or(dst)
+		}
+		_, err := io.Copy(w, expr.NewReader())
 		return err
 	}
 	return nil

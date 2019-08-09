@@ -27,8 +27,8 @@ import (
 var Logger *log.Logger
 
 type Runtime struct {
-	OFCmd pipe.Pipe // Open Files Command
-	OFDecoder func(io.Reader) ([]*OpenFile, error) // Open Files Decoder
+	OFCmd             pipe.Pipe                            // Open Files Command
+	OFDecoder         func(io.Reader) ([]*OpenFile, error) // Open Files Decoder
 	PrepareNFExprFunc func(string) string
 }
 

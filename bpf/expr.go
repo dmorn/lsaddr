@@ -19,56 +19,102 @@ import (
 	"strings"
 )
 
-// Expr represents a BPF expression. It carries a string.Builder,
-// which is used to construct the string. It's zero value is ready
-// to use.
-type Expr struct {
-	strings.Builder
+type Operator string
+
+// Supported operators
+const (
+	AND  Operator = "and"
+	OR            = "or"
+	NOOP          = ""
+)
+
+type Dir string
+
+const (
+	SRC   Dir = "src"
+	DST       = "dst"
+	NODIR     = ""
+)
+
+// Expr represents a BPF expression. It's zero value is ready to use.
+type Expr string
+
+// Join returns a new expression, made of the conjunction of the
+// caller with `r`, wrapped in an Expr.
+// Callers have to ensure that operator precedence is preserved.
+func (l Expr) Join(r string) Expr {
+	raw := join(NOOP, string(l), r)
+	return Expr(raw)
 }
 
-// NewExpr is just a convenience constructor.
-func NewExpr() *Expr {
-	return &Expr{}
+// And works as `Join`, but uses "and" to join the two expressions.
+func (l Expr) And(r string) Expr {
+	raw := join(AND, string(l), r)
+	return Expr(raw)
 }
 
-// Hosts builds a new expression appending to the current one
-// an "host" filter, using `addrs` as source, deduplicated.
-func (e *Expr) Host(addrs []net.Addr) *Expr {
-	if len(addrs) == 0 {
-		return e
+// Or is the same as `And`, but with "or".
+func (l Expr) Or(r string) Expr {
+	raw := join(OR, string(l), r)
+	return Expr(raw)
+}
+
+// Wrap surrounds `e` with ().
+func (e Expr) Wrap() Expr {
+	return Expr("(" + string(e) + ")")
+}
+
+// FromAddr returns a BPF from a network address, plus direction
+// information. Use NODIR to make a filter that matches both src and
+// dst packets.
+func FromAddr(d Dir, addr net.Addr) Expr {
+	if addr.String() == "" {
+		return Expr("")
 	}
 
-	seen := make(map[string]bool)
-	acc := make([]string, 0, len(addrs))
-	for _, v := range addrs {
-		host, _, err := net.SplitHostPort(v.String())
-		if err != nil {
-			continue
-		}
+	expr := Expr(addr.Network()) // <udp, tcp>
+	addrExpr := fromAddr(addr)
 
-		if _, ok := seen[host]; !ok {
-			acc = append(acc, host)
-			seen[host] = true
-		}
+	if d == NODIR {
+		return expr.And(string(addrExpr))
 	}
+	return expr.And(string(d)).Join(string(addrExpr)) // and <src, dst>
+}
 
-	e.WriteString("host")
-	e.WriteString(strings.Join(acc, " or "))
-	return e
+func fromAddr(addr net.Addr) Expr {
+	var expr Expr
+	host, port, err := net.SplitHostPort(addr.String())
+
+	switch {
+	case err != nil:
+		return expr.Join("host " + addr.String())
+	case host == "*":
+		return expr.Join("port " + port)
+	default:
+		return expr.Join("host " + host).And("port " + port)
+	}
 }
 
 // NewReader returns an io.Reader implementation, which will read
 // the BPF expression from `e`. Later modifications of `e` will not
 // affect the content of the reader.
-func (e *Expr) NewReader() *strings.Reader {
-	return strings.NewReader(e.String() + "\n")
+func (e Expr) NewReader() *strings.Reader {
+	return strings.NewReader(string(e) + "\n")
 }
 
-// WriteString appends `s` to the expression written up to now. It takes
-// care of adding leading white spaces if needed.
-func (e *Expr) WriteString(s string) (int, error) {
-	if len(e.String()) > 0 {
-		s = " " + s
+func join(op Operator, a, b string) string {
+	// validate input
+	if len(a) == 0 && b != "()" {
+		return b
 	}
-	return e.Builder.WriteString(s)
+	if len(b) == 0 || b == "()" {
+		return a
+	}
+
+	switch op {
+	case NOOP:
+		return strings.Join([]string{a, b}, " ")
+	default:
+		return strings.Join([]string{a, string(op), b}, " ")
+	}
 }

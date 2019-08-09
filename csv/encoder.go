@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package encoder
+package csv
 
 import (
 	"encoding/csv"
@@ -22,21 +22,21 @@ import (
 	"github.com/booster-proj/lsaddr/lookup"
 )
 
-// CSVEncoder returns an Encoder which encodes a list
+// Encoder returns an Encoder which encodes a list
 // of NetFile into CSV format.
-type CSVEncoder struct {
+type Encoder struct {
 	w *csv.Writer
 }
 
-func newCSVEncoder(w io.Writer) *CSVEncoder {
-	return &CSVEncoder{
+func NewEncoder(w io.Writer) *Encoder {
+	return &Encoder{
 		w: csv.NewWriter(w),
 	}
 }
 
 // Encode writes `l` into encoder's writer in CSV format. Some data may have been
 // written to the writer even upon error.
-func (e *CSVEncoder) Encode(l []lookup.NetFile) error {
+func (e *Encoder) Encode(l []lookup.NetFile) error {
 	header := []string{"COMMAND", "NET", "SRC", "DST"}
 	if err := e.w.Write(header); err != nil {
 		return err
