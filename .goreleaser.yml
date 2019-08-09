@@ -18,7 +18,8 @@ builds:
       - linux
       - windows
 signs:
-  artifacts: checksum
+  -
+    artifacts: checksum
 changelog:
   sort: asc
   filters:
