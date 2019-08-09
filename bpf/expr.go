@@ -73,23 +73,34 @@ func FromAddr(d Dir, addr net.Addr) Expr {
 	}
 
 	expr := Expr(addr.Network()) // <udp, tcp>
-	addrExpr := fromAddr(addr)
+	addrExprRaw := string(fromAddr(addr))
+	if len(addrExprRaw) == 0 {
+		return expr
+	}
 
 	if d == NODIR {
-		return expr.And(string(addrExpr))
+		return expr.And(addrExprRaw)
 	}
-	return expr.And(string(d)).Join(string(addrExpr)) // and <src, dst>
+	return expr.And(string(d)).Join(addrExprRaw) // and <src, dst>
 }
 
 func fromAddr(addr net.Addr) Expr {
 	var expr Expr
 	host, port, err := net.SplitHostPort(addr.String())
 
+	valid := func(s string) bool {
+		return s != "" && s != "*"
+	}
+
 	switch {
 	case err != nil:
 		return expr.Join("host " + addr.String())
-	case host == "*":
+	case !valid(host) && !valid(port):
+		return expr
+	case !valid(host):
 		return expr.Join("port " + port)
+	case !valid(port):
+		return expr.Join("host " + host)
 	default:
 		return expr.Join("host " + host).And("port " + port)
 	}

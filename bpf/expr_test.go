@@ -81,6 +81,28 @@ func TestFromAddr(t *testing.T) {
 			dir:  bpf.NODIR,
 			bpf:  "tcp and port 57621",
 		},
+		// #6
+		{
+			addr: "tcp://*:*",
+			dir:  bpf.NODIR,
+			bpf:  "tcp",
+		},
+		{
+			addr: "tcp://booster:*",
+			dir:  bpf.NODIR,
+			bpf:  "tcp and host booster",
+		},
+		// #8
+		{
+			addr: "tcp://booster:*",
+			dir:  bpf.DST,
+			bpf:  "tcp and dst host booster",
+		},
+		{
+			addr: "tcp://*:*",
+			dir:  bpf.DST,
+			bpf:  "tcp",
+		},
 	}
 	for i, v := range tt {
 		addr := newAddr(v.addr)
