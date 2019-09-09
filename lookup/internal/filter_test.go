@@ -22,6 +22,7 @@ import (
 )
 
 func TestPidsFromTasks(t *testing.T) {
+	t.Parallel()
 	tasks := []*internal.Task{
 		newTask("foo", "1"),
 		newTask("foo", "2"),

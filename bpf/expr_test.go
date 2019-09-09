@@ -15,13 +15,14 @@
 package bpf_test
 
 import (
-	"net/url"
+	"strings"
 	"testing"
 
 	"github.com/booster-proj/lsaddr/bpf"
 )
 
 func TestJoin(t *testing.T) {
+	t.Parallel()
 	tt := []struct {
 		prev string
 		in   string
@@ -43,6 +44,7 @@ func TestJoin(t *testing.T) {
 }
 
 func TestFromAddr(t *testing.T) {
+	t.Parallel()
 	tt := []struct {
 		addr string
 		dir  bpf.Dir
@@ -114,14 +116,13 @@ func TestFromAddr(t *testing.T) {
 }
 
 func newAddr(s string) addr {
-	url, err := url.Parse(s)
-	if err != nil {
-		panic(err)
+	if len(s) == 0 {
+		return addr{}
 	}
-
+	parts := strings.Split(s, "://")
 	return addr{
-		net:  url.Scheme,
-		host: url.Host,
+		net:  parts[0],
+		host: parts[1],
 	}
 }
 
