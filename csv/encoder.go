@@ -18,6 +18,7 @@ package csv
 import (
 	"encoding/csv"
 	"io"
+	"strconv"
 
 	"github.com/booster-proj/lsaddr/lookup"
 )
@@ -37,13 +38,18 @@ func NewEncoder(w io.Writer) *Encoder {
 // Encode writes `l` into encoder's writer in CSV format. Some data may have been
 // written to the writer even upon error.
 func (e *Encoder) Encode(l []lookup.NetFile) error {
-	header := []string{"COMMAND", "NET", "SRC", "DST"}
+	header := []string{"PID", "NET", "SRC", "DST"}
 	if err := e.w.Write(header); err != nil {
 		return err
 	}
 
 	for _, v := range l {
-		record := []string{v.Command, v.Src.Network(), v.Src.String(), v.Dst.String()}
+		record := []string{
+			strconv.Itoa(v.Pid),
+			v.Src.Network(),
+			v.Src.String(),
+			v.Dst.String(),
+		}
 		if err := e.w.Write(record); err != nil {
 			return err
 		}
