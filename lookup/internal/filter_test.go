@@ -21,39 +21,39 @@ import (
 	"github.com/booster-proj/lsaddr/lookup/internal"
 )
 
-func TestPidsFromTasks(t *testing.T) {
+func TestFilterTasks(t *testing.T) {
 	t.Parallel()
 	tasks := []*internal.Task{
-		newTask("foo", "1"),
-		newTask("foo", "2"),
-		newTask("foo", "3"),
-		newTask("bar", "21"),
-		newTask("bar", "22"),
-		newTask("baz", "31"),
+		newTask("foo", 1),
+		newTask("foo", 2),
+		newTask("foo", 3),
+		newTask("bar", 21),
+		newTask("bar", 22),
+		newTask("baz", 31),
 	}
 
-	assertList(t, []string{"1", "2", "3"}, internal.PidsFromTasks(tasks, "foo"))
-	assertList(t, []string{"21", "22"}, internal.PidsFromTasks(tasks, "bar"))
-	assertList(t, []string{"31"}, internal.PidsFromTasks(tasks, "baz"))
-	assertList(t, []string{}, internal.PidsFromTasks(tasks, "invalid"))
+	assertPids(t, []int{1, 2, 3}, internal.FilterTasks(tasks, "foo"))
+	assertPids(t, []int{21, 22}, internal.FilterTasks(tasks, "bar"))
+	assertPids(t, []int{31}, internal.FilterTasks(tasks, "baz"))
+	assertPids(t, []int{}, internal.FilterTasks(tasks, "invalid"))
 }
 
 // Private helpers
 
-func newTask(image, pid string) *internal.Task {
+func newTask(image string, pid int) *internal.Task {
 	return &internal.Task{
 		Image: image,
 		Pid:   pid,
 	}
 }
 
-func assertList(t *testing.T, exp, x []string) {
-	if len(exp) != len(x) {
-		t.Fatalf("Unexpected list length. Wanted %d, found %d", len(exp), len(x))
+func assertPids(t *testing.T, exp []int, prod []*internal.Task) {
+	if len(exp) != len(prod) {
+		t.Fatalf("Unexpected list length. Wanted %d, found %d", len(exp), len(prod))
 	}
 	for i := range exp {
-		if exp[i] != x[i] {
-			t.Fatalf("Unexpected item in list. Wanted %v, found %v. Content: %v", exp[i], x[i], x)
+		if exp[i] != prod[i].Pid {
+			t.Fatalf("Unexpected item in list. Wanted %v, found %v. Content: %v", exp[i], prod[i].Pid, prod)
 		}
 	}
 }

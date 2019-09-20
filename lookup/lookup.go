@@ -22,11 +22,11 @@ import (
 	"github.com/booster-proj/lsaddr/lookup/internal"
 )
 
-// NetFile contains some information obtained from a network file.
+// NetFile represents a network file.
 type NetFile struct {
-	Command string   // command owning the file
-	Src     net.Addr // source address
-	Dst     net.Addr // destination address
+	Pid int      // pid of the owner
+	Src net.Addr // source address
+	Dst net.Addr // destination address
 }
 
 // OpenNetFiles compiles a regular expression out of "s". Some manipulation
@@ -35,7 +35,7 @@ type NetFile struct {
 // will be trated as the root path to an application, otherwise "s" will be
 // compiled untouched.
 // It then uses ``lsof'' (or its platform dependent equivalent) tool to find
-// the list of open files, filtering the list taking only the lines that
+// the list of open files, filtering out the list by taking only the lines that
 // match against the regular expression built.
 func OpenNetFiles(s string) ([]NetFile, error) {
 	rgx, err := internal.BuildNFFilter(s)
@@ -54,14 +54,10 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 	ff := make([]NetFile, len(ll))
 	for i, v := range ll {
 		src, dst := v.UnmarshalName()
-		cmd := v.Command
-		if cmd == "" {
-			cmd = s
-		}
 		ff[i] = NetFile{
-			Command: cmd,
-			Src:     src,
-			Dst:     dst,
+			Pid: v.Pid,
+			Src: src,
+			Dst: dst,
 		}
 	}
 	return ff, nil

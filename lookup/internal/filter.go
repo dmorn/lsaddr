@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"gopkg.in/pipe.v2"
@@ -38,19 +39,6 @@ func BuildNFFilter(s string) (*regexp.Regexp, error) {
 	}
 
 	return rgx, nil
-}
-
-// PidsFromTasks takes "tasks", iterates over them and groups all ``Pid''
-// fields that have the same ``Image'' field, equal to "image".
-func PidsFromTasks(tasks []*Task, image string) []string {
-	pids := []string{}
-	for _, v := range tasks {
-		if v.Image != image {
-			continue
-		}
-		pids = append(pids, v.Pid)
-	}
-	return pids
 }
 
 // Private helpers
@@ -82,7 +70,7 @@ func prepareNFExprDarwin(s string) string {
 	log.Printf("app name: %s, path: %s", name, path)
 
 	// Find process identifier associated with this app.
-	pids := pids(name)
+	pids := pgrep(name)
 	if len(pids) == 0 {
 		log.Printf("cannot find any PID associated with %s", name)
 		return s
@@ -104,9 +92,9 @@ func appName(path string) (string, error) {
 	return ExtractAppName(f)
 }
 
-// pids returns the process identifiers of "proc".
-func pids(proc string) []string {
-	p := pipe.Exec("pgrep", proc)
+// pgrep executes ``pgrep'' passing "expr" to it as first argument.
+func pgrep(expr string) []string {
+	p := pipe.Exec("pgrep", expr)
 	output, err := pipe.Output(p)
 	if err != nil {
 		log.Printf("unable to find pids with pgrep: %v", err)
@@ -136,15 +124,19 @@ func prepareNFExprWin(s string) string {
 		s = filepath.Base(s)
 	}
 
-	tasks := tasks(s)
+	tasks := tasklist(s)
 	if len(tasks) == 0 {
 		log.Printf("cannot find any task associated with %s", s)
 		return s
 	}
-	pids := PidsFromTasks(tasks, s)
-	if len(pids) == 0 {
+	filtered := FilterTasks(tasks, s)
+	if len(filtered) == 0 {
 		log.Printf("cannot find any PID associated with %s", s)
 		return s
+	}
+	pids := make([]string, len(filtered))
+	for _, v := range filtered {
+		pids = append(pids, strconv.Itoa(v.Pid))
 	}
 
 	return strings.Join(pids, "|")
@@ -152,7 +144,7 @@ func prepareNFExprWin(s string) string {
 
 // tasks executes the ``tasklist'' command, which is only
 // available on windows.
-func tasks(image string) []*Task {
+func tasklist(image string) []*Task {
 	empty := []*Task{}
 	p := pipe.Exec("tasklist")
 	output, err := pipe.Output(p)
@@ -168,4 +160,17 @@ func tasks(image string) []*Task {
 		return empty
 	}
 	return tasks
+}
+
+// FilterTasks takes "tasks", iterates over them and filters out tasks
+// that do not have their image field == "image".
+func FilterTasks(tasks []*Task, image string) []*Task {
+	acc := make([]*Task, 0, len(tasks))
+	for _, v := range tasks {
+		if v.Image != image {
+			continue
+		}
+		acc = append(acc, v)
+	}
+	return acc
 }
