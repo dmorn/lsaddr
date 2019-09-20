@@ -20,7 +20,9 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"net"
+	"strconv"
 	"strings"
 
 	"howett.net/plist"
@@ -30,7 +32,7 @@ import (
 
 type OpenFile struct {
 	Command string
-	Pid     string
+	Pid     int
 	User    string
 	Fd      string
 	Type    string
@@ -41,7 +43,7 @@ type OpenFile struct {
 }
 
 func (f *OpenFile) String() string {
-	return fmt.Sprintf("{Pid: %s, Proto: %s, Conn: %s}", f.Pid, f.Node, f.Name)
+	return fmt.Sprintf("{Pid: %d, Proto: %s, Conn: %s}", f.Pid, f.Node, f.Name)
 }
 
 // UnmarshalName unmarshals `lsof`'s name field, which by default is in the form:
@@ -70,13 +72,14 @@ func (f *OpenFile) UnmarshalName() (net.Addr, net.Addr) {
 // different from ``io.EOF''.
 func DecodeLsofOutput(r io.Reader) ([]*OpenFile, error) {
 	ll := []*OpenFile{}
-	err := scanLines(r, func(line string) {
+	err := scanLines(r, func(line string) error {
 		f, err := UnmarshalLsofLine(line)
 		if err != nil {
-			// Skip this line
-			return
+			log.Printf("skipping lsof line \"%s\": %v", line, err)
+			return nil
 		}
 		ll = append(ll, f)
+		return nil
 	})
 	return ll, err
 }
@@ -95,10 +98,14 @@ func UnmarshalLsofLine(line string) (*OpenFile, error) {
 	if err != nil {
 		return nil, err
 	}
+	pid, err := strconv.Atoi(chunks[1])
+	if err != nil {
+		return nil, fmt.Errorf("error parsing pid: %w", err)
+	}
 
 	f := &OpenFile{
 		Command: chunks[0],
-		Pid:     chunks[1],
+		Pid:     pid,
 		User:    chunks[2],
 		Fd:      chunks[3],
 		Type:    chunks[4],
@@ -122,13 +129,14 @@ func UnmarshalLsofLine(line string) (*OpenFile, error) {
 // if reading from "r" produces an error different from ``io.EOF''.
 func DecodeNetstatOutput(r io.Reader) ([]*OpenFile, error) {
 	ll := []*OpenFile{}
-	err := scanLines(r, func(line string) {
+	err := scanLines(r, func(line string) error {
 		f, err := UnmarshalNetstatLine(line)
 		if err != nil {
-			// Skip this line
-			return
+			log.Printf("skipping netstat line \"%s\": %v", line, err)
+			return nil
 		}
 		ll = append(ll, f)
+		return nil
 	})
 	return ll, err
 }
@@ -161,13 +169,17 @@ func UnmarshalNetstatLine(line string) (*OpenFile, error) {
 		Node: chunks[0],
 		Name: from + "->" + to,
 	}
-	if len(chunks) == 4 {
-		// It means that the state field is missing
-		f.Pid = chunks[3]
-	} else {
+	hasState := len(chunks) > 4
+	pidIndex := 3
+	if hasState {
+		pidIndex = 4
 		f.State = chunks[3]
-		f.Pid = chunks[4]
 	}
+	pid, err := strconv.Atoi(chunks[pidIndex])
+	if err != nil {
+		return nil, fmt.Errorf("error parsing pid: %w", err)
+	}
+	f.Pid = pid
 
 	return f, nil
 }
@@ -175,12 +187,12 @@ func UnmarshalNetstatLine(line string) (*OpenFile, error) {
 // Tasklist
 
 type Task struct {
-	Pid   string
+	Pid   int
 	Image string
 }
 
 func (t *Task) String() string {
-	return fmt.Sprintf("{Image: %s, Pid: %v}", t.Image, t.Pid)
+	return fmt.Sprintf("{Image: %s, Pid: %d}", t.Image, t.Pid)
 }
 
 // DecodeTasklistOutput expects "r" to contain the output of
@@ -196,31 +208,42 @@ func DecodeTasklistOutput(r io.Reader) ([]*Task, error) {
 	ll := []*Task{}
 	delim := "="
 	headerTrimmed := false
-	err := scanLines(r, func(line string) {
+	segLengths := []int{}
+	err := scanLines(r, func(line string) error {
 		if !headerTrimmed {
 			if strings.HasPrefix(line, delim) && strings.HasSuffix(line, delim) {
-				// This is the header delimiter!
 				headerTrimmed = true
-				return
+				// This is the header delimiter!
+				chunks, err := chunkLine(line, " ", 5)
+				if err != nil {
+					return fmt.Errorf("unexpected header format: %w", err)
+				}
+				for _, v := range chunks {
+					segLengths = append(segLengths, len(v))
+				}
 			}
 			// Still in the header
-			return
+			return nil
 		}
 
-		t, err := UnmarshalTasklistLine(line)
+		t, err := UnmarshalTasklistLine(line, segLengths)
 		if err != nil {
-			// Skip this line
-			return
+			log.Printf("skipping tasklist line \"%s\": %v", line, err)
+			return nil
 		}
 		ll = append(ll, t)
+		return nil
 	})
 	return ll, err
 }
 
 // UnmarshalTasklistLine expectes "line" to be a single line output from
-// ``tasklist'' call. The line is unmarshaled into a ``Task''
-// only if is splittable by " " into a slice of at least 5 items. "line" should
-// not end with a "\n" delimitator, otherwise it will end up in the last
+// ``tasklist'' call. The line is unmarshaled into a ``Task'' and the operation
+// is performed by readying bytes equal to "segLengths"[i], in order. "segLengths"
+// should be computed using the header delimitator and counting the number of
+// "=" in each segment of the header (split it by " ")
+//
+// "line" should not end with a "\n" delimitator, otherwise it will end up in the last
 // unmarshaled item.
 // The "header" lines (see below) should not be passed to this function.
 //
@@ -230,14 +253,39 @@ func DecodeTasklistOutput(r io.Reader) ([]*Task, error) {
 //
 // Example line:
 // svchost.exe                    940 Services                   0     52,336 K
-func UnmarshalTasklistLine(line string) (*Task, error) {
-	chunks, err := chunkLine(line, " ", 5)
-	if err != nil {
-		return nil, err
+func UnmarshalTasklistLine(line string, segLengths []int) (*Task, error) {
+	buf := bytes.NewBufferString(line)
+	p := make([]byte, 32)
+
+	var image, pidRaw string
+	for i, v := range segLengths[:2] {
+		n, err := buf.Read(p[:v+1])
+		if err != nil {
+			return nil, fmt.Errorf("unable to read tasklist chunk: %w", err)
+		}
+		s := strings.Trim(string(p[:n]), " ")
+		switch i {
+		case 0:
+			image = s
+		case 1:
+			pidRaw = s
+		default:
+		}
 	}
+	if image == "" {
+		return nil, fmt.Errorf("couldn't decode image from line")
+	}
+	if pidRaw == "" {
+		return nil, fmt.Errorf("couldn't decode pid from line")
+	}
+	pid, err := strconv.Atoi(pidRaw)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing pid: %w", err)
+	}
+
 	return &Task{
-		Image: chunks[0],
-		Pid:   chunks[1],
+		Image: image,
+		Pid:   pid,
 	}, nil
 }
 
@@ -284,13 +332,15 @@ func chunkLine(line string, sep string, min int) ([]string, error) {
 	return chunks, nil
 }
 
-func scanLines(r io.Reader, f func(string)) error {
+func scanLines(r io.Reader, f func(string) error) error {
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
 		line = strings.Trim(line, "\n")
 		line = strings.Trim(line, "\r")
-		f(line)
+		if err := f(line); err != nil {
+			return err
+		}
 	}
 	return scanner.Err()
 }

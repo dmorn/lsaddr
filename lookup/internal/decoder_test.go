@@ -33,7 +33,7 @@ func TestUnmarshalLsofLine(t *testing.T) {
 	}
 
 	assert(t, "Spotify", f.Command)
-	assert(t, "11778", f.Pid)
+	assert(t, 11778, f.Pid)
 	assert(t, "danielmorandini", f.User)
 	assert(t, "128u", f.Fd)
 	assert(t, "IPv4", f.Type)
@@ -128,7 +128,7 @@ func TestUnmarshalNetstatLine(t *testing.T) {
 	assert(t, "TCP", f.Node)
 	assert(t, "0.0.0.0:135->0.0.0.0:0", f.Name)
 	assert(t, "LISTENING", f.State)
-	assert(t, "748", f.Pid)
+	assert(t, 748, f.Pid)
 }
 
 // Tasklist
@@ -169,13 +169,34 @@ func TestDecodeTasklistOutput(t *testing.T) {
 
 func TestUnmarshalTasklistLine(t *testing.T) {
 	t.Parallel()
-	line := "smss.exe                       296 Services                   0      1,008 K"
-	task, err := internal.UnmarshalTasklistLine(line)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	tt := []struct {
+		line  string
+		segs  []int
+		image string
+		pid   int
+	}{
+		{
+			line:  "svchost.exe                    940 Services                   0     52,336 K",
+			segs:  []int{25, 8, 16, 11, 12},
+			image: "svchost.exe",
+			pid:   940,
+		},
+		{
+			line:  "System Idle Process              0 Services                   0          4 K",
+			segs:  []int{25, 8, 16, 11, 12},
+			image: "System Idle Process",
+			pid:   0,
+		},
 	}
-	assert(t, "smss.exe", task.Image)
-	assert(t, "296", task.Pid)
+
+	for i, v := range tt {
+		task, err := internal.UnmarshalTasklistLine(v.line, v.segs)
+		if err != nil {
+			t.Fatalf("%d: unexpected error: %v", i, err)
+		}
+		assert(t, v.image, task.Image)
+		assert(t, v.pid, task.Pid)
+	}
 }
 
 // Plist
@@ -225,8 +246,8 @@ func TestExtractAppName(t *testing.T) {
 
 // Private helpers
 
-func assert(t *testing.T, exp, x string) {
+func assert(t *testing.T, exp, x interface{}) {
 	if exp != x {
-		t.Fatalf("Assert failed: expected %s, found %s", exp, x)
+		t.Fatalf("Assert failed: expected %v, found %v", exp, x)
 	}
 }
