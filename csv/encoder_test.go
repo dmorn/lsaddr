@@ -25,6 +25,7 @@ import (
 )
 
 func TestEncode_CSV(t *testing.T) {
+	t.Parallel()
 	l := netFiles0
 	var w strings.Builder
 	if err := csv.NewEncoder(&w).Encode(l); err != nil {
