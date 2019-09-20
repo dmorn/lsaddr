@@ -32,18 +32,18 @@ func TestEncode_CSV(t *testing.T) {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 
-	expOut := `PID,NET,SRC,DST
-101,udp,192.168.0.61:54104,52.94.218.7:443
-102,udp,[::1]:60051,[::1]:60052
+	expOut := `PID,CMD,NET,SRC,DST
+101,foo,udp,192.168.0.61:54104,52.94.218.7:443
+102,,udp,[::1]:60051,[::1]:60052
 `
 	if expOut != w.String() {
-		t.Fatalf("Unexpected output: wanted \"%s\", found \"%s\"", expOut, w.String())
+		t.Fatalf("Unexpected output: wanted\n\"%s\",\nfound\n\"%s\"", expOut, w.String())
 	}
 }
 
 var netFiles0 = []lookup.NetFile{
-	{101, newUDPAddr("192.168.0.61:54104"), newUDPAddr("52.94.218.7:443")},
-	{102, newUDPAddr("[::1]:60051"), newUDPAddr("[::1]:60052")},
+	{"foo", 101, newUDPAddr("192.168.0.61:54104"), newUDPAddr("52.94.218.7:443")},
+	{"", 102, newUDPAddr("[::1]:60051"), newUDPAddr("[::1]:60052")},
 }
 
 func newUDPAddr(address string) net.Addr {

@@ -24,6 +24,7 @@ import (
 
 // NetFile represents a network file.
 type NetFile struct {
+	Cmd string   // command associated with Pid
 	Pid int      // pid of the owner
 	Src net.Addr // source address
 	Dst net.Addr // destination address
@@ -55,6 +56,7 @@ func OpenNetFiles(s string) ([]NetFile, error) {
 	for i, v := range ll {
 		src, dst := v.UnmarshalName()
 		ff[i] = NetFile{
+			Cmd: v.Command,
 			Pid: v.Pid,
 			Src: src,
 			Dst: dst,

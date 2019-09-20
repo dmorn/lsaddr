@@ -38,7 +38,7 @@ func NewEncoder(w io.Writer) *Encoder {
 // Encode writes `l` into encoder's writer in CSV format. Some data may have been
 // written to the writer even upon error.
 func (e *Encoder) Encode(l []lookup.NetFile) error {
-	header := []string{"PID", "NET", "SRC", "DST"}
+	header := []string{"PID", "CMD", "NET", "SRC", "DST"}
 	if err := e.w.Write(header); err != nil {
 		return err
 	}
@@ -46,6 +46,7 @@ func (e *Encoder) Encode(l []lookup.NetFile) error {
 	for _, v := range l {
 		record := []string{
 			strconv.Itoa(v.Pid),
+			v.Cmd,
 			v.Src.Network(),
 			v.Src.String(),
 			v.Dst.String(),
