@@ -25,6 +25,7 @@ import (
 // Lsof
 
 func TestUnmarshalLsofLine(t *testing.T) {
+	t.Parallel()
 	line := "Spotify   11778 danielmorandini  128u  IPv4 0x25c5bf09993eff03      0t0  TCP 192.168.0.61:51291->35.186.224.47:https (ESTABLISHED)"
 	f, err := internal.UnmarshalLsofLine(line)
 	if err != nil {
@@ -48,6 +49,7 @@ postgres    676 danielmorandini   10u  IPv6 0x25c5bf0997ca88e3      0t0  UDP [::
 `
 
 func TestDecodeLsofOutput(t *testing.T) {
+	t.Parallel()
 	buf := bytes.NewBufferString(lsofExample)
 	ll, err := internal.DecodeLsofOutput(buf)
 	if err != nil {
@@ -59,6 +61,7 @@ func TestDecodeLsofOutput(t *testing.T) {
 }
 
 func TestUnmarshalName(t *testing.T) {
+	t.Parallel()
 	tt := []struct {
 		node string
 		name string
@@ -104,6 +107,7 @@ Active Connections
 `
 
 func TestDecodeNetstatOutput(t *testing.T) {
+	t.Parallel()
 	buf := bytes.NewBufferString(netstatExample)
 	ll, err := internal.DecodeNetstatOutput(buf)
 	if err != nil {
@@ -115,6 +119,7 @@ func TestDecodeNetstatOutput(t *testing.T) {
 }
 
 func TestUnmarshalNetstatLine(t *testing.T) {
+	t.Parallel()
 	line := "  TCP    0.0.0.0:135            0.0.0.0:0              LISTENING       748"
 	f, err := internal.UnmarshalNetstatLine(line)
 	if err != nil {
@@ -151,6 +156,7 @@ WUDFHost.exe                  1240 Services                   0      6,888 K
 `
 
 func TestDecodeTasklistOutput(t *testing.T) {
+	t.Parallel()
 	buf := bytes.NewBufferString(tasklistExample)
 	ll, err := internal.DecodeTasklistOutput(buf)
 	if err != nil {
@@ -162,6 +168,7 @@ func TestDecodeTasklistOutput(t *testing.T) {
 }
 
 func TestUnmarshalTasklistLine(t *testing.T) {
+	t.Parallel()
 	line := "smss.exe                       296 Services                   0      1,008 K"
 	task, err := internal.UnmarshalTasklistLine(line)
 	if err != nil {
@@ -204,6 +211,7 @@ const infoExample = `<?xml version="1.0" encoding="UTF-8"?>
 `
 
 func TestExtractAppName(t *testing.T) {
+	t.Parallel()
 	r := bytes.NewBufferString(infoExample)
 	name, err := internal.ExtractAppName(r)
 	if err != nil {
