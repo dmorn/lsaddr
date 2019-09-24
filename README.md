@@ -20,9 +20,9 @@ OS | Dep | Notes
 
 ## Installation
 Choose one
-- `go get -u github.com/booster-proj/lsaddr`
-- `bash <(curl -s https://raw.githubusercontent.com/booster-proj/lsaddr/master/install.sh)`
-- download your favourite release from the [releases section](https://github.com/booster-proj/lsaddr/releases)
+* $ `go get -u github.com/booster-proj/lsaddr`
+* $ `bash <(curl -s https://raw.githubusercontent.com/booster-proj/lsaddr/master/install.sh)`
+* download your favourite release from the [releases section](https://github.com/booster-proj/lsaddr/releases)
 
 Big thanks to [goreleaser](https://github.com/goreleaser/goreleaser) and [godownloader](https://github.com/goreleaser/godownloader) which made the releasing process **FUN**! 🤩
 
