@@ -15,14 +15,14 @@
 package lsof
 
 import (
-	"fmt"
-	"strings"
-	"net"
 	"bytes"
+	"fmt"
 	"io"
 	"log"
-	"time"
+	"net"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/jecoz/lsaddr/onf/internal"
 	"gopkg.in/pipe.v2"

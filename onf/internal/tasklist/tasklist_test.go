@@ -17,8 +17,8 @@ package tasklist
 
 import (
 	"bytes"
-	"testing"
 	"reflect"
+	"testing"
 )
 
 const tasklistExample = `
@@ -92,4 +92,3 @@ func assert(t *testing.T, exp, x interface{}) {
 		t.Fatalf("Assert failed: expected %v, found %v", exp, x)
 	}
 }
-
