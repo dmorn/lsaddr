@@ -15,13 +15,16 @@
 package netstat
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"strconv"
+	"time"
 
 	"github.com/jecoz/lsaddr/onf/internal"
+	"gopkg.in/pipe.v2"
 )
 
 type ActiveConnection struct {

@@ -18,6 +18,8 @@
 package onf
 
 import (
+	"time"
+
 	"github.com/jecoz/lsaddr/onf/internal/netstat"
 )
 
@@ -36,4 +38,5 @@ func fetchAll() ([]ONF, error) {
 			CreatedAt: time.Now(),
 		}
 	}
+	return mapped, nil
 }
