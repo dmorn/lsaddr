@@ -39,7 +39,7 @@ func TestParseONF(t *testing.T) {
 	assert(t, "(ESTABLISHED)", onf.State)
 }
 
-func assert(t *testing.T, exp, x interface{}) {
+func assert(t *testing.T, exp, x string) {
 	if exp != x {
 		t.Fatalf("Assert failed: expected %v, found %v", exp, x)
 	}
