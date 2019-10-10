@@ -31,10 +31,10 @@ func fetchAll() ([]ONF, error) {
 	mapped := make([]ONF, len(set))
 	for i, v := range set {
 		mapped[i] = ONF{
-			Raw: v.Raw,
-			Pid: v.Pid,
-			Src: v.SrcAddr,
-			Dst: v.DstAddr,
+			Raw:       v.Raw,
+			Pid:       v.Pid,
+			Src:       v.SrcAddr,
+			Dst:       v.DstAddr,
 			CreatedAt: time.Now(),
 		}
 	}

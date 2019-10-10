@@ -22,10 +22,10 @@ import (
 
 // NetFile represents a network file.
 type ONF struct {
-	Raw string   // raw string that produced this result
-	Cmd string   // command associated with Pid
-	Pid int      // pid of the owner
-	Src net.Addr // source address
-	Dst net.Addr // destination address
+	Raw       string   // raw string that produced this result
+	Cmd       string   // command associated with Pid
+	Pid       int      // pid of the owner
+	Src       net.Addr // source address
+	Dst       net.Addr // destination address
 	CreatedAt time.Time
 }
