@@ -25,11 +25,23 @@ import (
 )
 
 type ActiveConnection struct {
+	Raw     string
 	Proto   string
 	SrcAddr net.Addr
 	DstAddr net.Addr
 	State   string
 	Pid     int
+}
+
+func Run() ([]ActiveConnection, error) {
+	acc := []ActiveConnection{}
+	p := pipe.Exec("netstat", "-nao")
+	out, err := pipe.OutputTimeout(p, time.Millisecond*100)
+	if err != nil {
+		return acc, fmt.Errorf("unable to run netstat: %w", err)
+	}
+	buf := bytes.NewBuffer(out)
+	return ParseOutput(buf)
 }
 
 // ParseOutput expects "r" to contain the output of
@@ -79,6 +91,7 @@ func ParseActiveConnection(line string) (*ActiveConnection, error) {
 	}
 
 	ac := &ActiveConnection{
+		Raw:     line,
 		Proto:   proto,
 		SrcAddr: src,
 		DstAddr: dst,

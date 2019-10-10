@@ -29,6 +29,7 @@ import (
 )
 
 type OpenFile struct {
+	Raw     string
 	Command string
 	Pid     int
 	User    string
@@ -91,6 +92,7 @@ func ParseOpenFile(line string) (*OpenFile, error) {
 	}
 
 	onf := &OpenFile{
+		Raw:     line,
 		Command: chunks[0],
 		Pid:     pid,
 		User:    chunks[2],

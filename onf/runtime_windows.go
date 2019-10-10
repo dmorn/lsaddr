@@ -1,6 +1,4 @@
-// +build darwin
-
-// Copyright © 2019 booster authors
+// Copyright © 2019 Jecoz
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -15,14 +13,27 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package internal
+// +build windows
+
+package onf
 
 import (
-	"gopkg.in/pipe.v2"
+	"github.com/jecoz/lsaddr/onf/internal/netstat"
 )
 
-var runtime = Runtime{
-	OFCmd:             pipe.Exec("lsof", "-i", "-n", "-P"),
-	OFDecoder:         DecodeLsofOutput,
-	PrepareNFExprFunc: prepareNFExprDarwin,
+func fetchAll() ([]ONF, error) {
+	set, err := netstat.Run()
+	if err != nil {
+		return []ONF{}, err
+	}
+	mapped := make([]ONF, len(set))
+	for i, v := range set {
+		mapped[i] = ONF{
+			Raw: v.Raw,
+			Pid: v.Pid,
+			Src: v.SrcAddr,
+			Dst: v.DstAddr,
+			CreatedAt: time.Now(),
+		}
+	}
 }

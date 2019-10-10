@@ -21,7 +21,7 @@ import (
 )
 
 // NetFile represents a network file.
-type Onf struct {
+type ONF struct {
 	Raw string   // raw string that produced this result
 	Cmd string   // command associated with Pid
 	Pid int      // pid of the owner

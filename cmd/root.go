@@ -1,4 +1,4 @@
-// Copyright © 2019 booster authors
+// Copyright © 2019 Jecoz
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -15,27 +15,23 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 
-	"github.com/booster-proj/lsaddr/bpf"
-	"github.com/booster-proj/lsaddr/csv"
-	"github.com/booster-proj/lsaddr/lookup"
+	"github.com/jecoz/lsaddr/onf"
 	"github.com/spf13/cobra"
 )
 
-var debug bool
-var output string
+var debug, raw bool
+var format string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "lsaddr",
-	Short: "Show a subset of all network addresses being used by the system",
+	Short: "Show a subset of all network addresses being used by your apps",
 	Long:  usage,
 	Args:  cobra.MaximumNArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -44,31 +40,28 @@ var rootCmd = &cobra.Command{
 			log.SetOutput(ioutil.Discard)
 		}
 
-		output = strings.ToLower(output)
-		if err := validateOutput(output); err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
+		format = strings.ToLower(format)
+		if err := validateFormat(format); err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		var s string
-		if len(args) > 0 {
-			s = args[0]
-		}
-
-		ff, err := lookup.OpenNetFiles(s)
+		set, err := onf.FetchAll()
 		if err != nil {
-			fmt.Printf("unable to find open network files for %s: %v\n", s, err)
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
-		log.Printf("# of open files: %d", len(ff))
+		//fset, err := onf.Filter(set, s)
+		//if err != nil {
+		//	fmt.Fprintf(os.Stderr, "error: unable to filter with %s: %w\n", s, err")
+		//	os.Exit(1)
+		//}
 
-		w := bufio.NewWriter(os.Stdout)
-		if err := writeOutputTo(w, output, ff); err != nil {
-			fmt.Fprintf(os.Stderr, "unable to write output: %v", err)
-			os.Exit(1)
+		log.Printf("# of open network files: %d", len(set))
+		for _, v := range set {
+			fmt.Printf("%v\n", v)
 		}
-		w.Flush()
 	},
 }
 
@@ -82,38 +75,22 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "increment logger verbosity")
-	rootCmd.PersistentFlags().StringVarP(&output, "out", "o", "csv", "choose type of output produced <csv|bpf>")
+	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "increment logger verbosity")
+	rootCmd.PersistentFlags().BoolVarP(&raw, "raw", "r", false, "increment logger verbosity")
+	rootCmd.PersistentFlags().StringVarP(&format, "format", "f", "csv", "choose format of output produced <csv|bpf>")
 }
 
-func writeOutputTo(w io.Writer, output string, ff []lookup.NetFile) error {
-	switch output {
-	case "csv":
-		return csv.NewEncoder(w).Encode(ff)
-	case "bpf":
-		var expr bpf.Expr
-		for _, v := range ff {
-			src := string(bpf.FromAddr(bpf.NODIR, v.Src).Wrap())
-			dst := string(bpf.FromAddr(bpf.NODIR, v.Dst).Wrap())
-			expr = expr.Or(src).Or(dst)
-		}
-		_, err := io.Copy(w, expr.NewReader())
-		return err
-	}
-	return nil
-}
-
-func validateOutput(output string) error {
-	switch output {
+func validateFormat(format string) error {
+	switch format {
 	case "csv", "bpf":
 		return nil
 	default:
-		return fmt.Errorf("unrecognised output %s", output)
+		return fmt.Errorf("unrecognised format option %s", format)
 	}
 }
 
 const usage = `
-'lsaddr' takes the entire list of currently open network connections and filters it out
+'lsaddr' takes the entire list of open network files and filters it out
 using the argument provided, which can either be:
 
 - "*.app" (macOS): It will be recognised as the path leading to the root directory of
@@ -123,12 +100,11 @@ an Application. The tool will then:
 	3. Build a regular expression out of them
 
 - a regular expression: which will be used to filter out the list of open files. Each line that
-does not match against the regex will be discarded. On macOS, the list of open files is fetched
-using 'lsof -i -n -P'.
+does not match against the regex will be discarded (e.g. "chrome.exe", "Safari", "104|405").
 Check out https://golang.org/pkg/regexp/ to learn how to properly format your regex.
 
-It is possible to configure with the '-out' flag which output 'lsaddr' will produce. Possible
-values are:
+Using the "--format" or "-f" flag, it is possible to decide the format/encoding of the output
+produced. Possible values are:
 - "bpf": produces a Berkley Packet Filter expression, which, if given to a tool that supports
 bpfs, will make it capture only the packets headed to/coming from the destination addresses
 of the open network files collected.

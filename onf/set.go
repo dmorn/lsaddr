@@ -15,7 +15,6 @@
 
 package onf
 
-func FetchAll() ([]Onf, error) {
-	internal.ToolSet.FetchAll()
-
+func FetchAll() ([]ONF, error) {
+	return fetchAll()
 }
