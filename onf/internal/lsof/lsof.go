@@ -28,7 +28,7 @@ import (
 	"gopkg.in/pipe.v2"
 )
 
-type ONF struct {
+type OpenFile struct {
 	Command string
 	Pid     int
 	User    string
@@ -40,8 +40,8 @@ type ONF struct {
 	DstAddr net.Addr // Destination address
 }
 
-func Run() ([]ONF, error) {
-	acc := []ONF{}
+func Run() ([]OpenFile, error) {
+	acc := []OpenFile{}
 	p := pipe.Exec("lsof", "-i", "-n", "-P")
 	out, err := pipe.OutputTimeout(p, time.Millisecond*100)
 	if err != nil {
@@ -53,14 +53,14 @@ func Run() ([]ONF, error) {
 
 // ParseOutput expects "r" to contain the output of
 // an ``lsof -i -n -P'' call. The output is splitted into each new line,
-// and each line that ``ParseONF'' is able to parse
+// and each line that ``ParseOpenFile'' is able to parse
 // is appended to the final output.
 // Returns an error only if reading from "r" produces an error
 // different from ``io.EOF''.
-func ParseOutput(r io.Reader) ([]ONF, error) {
-	set := []ONF{}
+func ParseOutput(r io.Reader) ([]OpenFile, error) {
+	set := []OpenFile{}
 	err := internal.ScanLines(r, func(line string) error {
-		onf, err := ParseONF(line)
+		onf, err := ParseOpenFile(line)
 		if err != nil {
 			log.Printf("skipping onf \"%s\": %v", line, err)
 			return nil
@@ -71,8 +71,8 @@ func ParseOutput(r io.Reader) ([]ONF, error) {
 	return set, err
 }
 
-// ParseONF expectes "line" to be a single line output from
-// ``lsof -i -n -P'' call. The line is unmarshaled into an ``ONF''
+// ParseOpenFile expectes "line" to be a single line output from
+// ``lsof -i -n -P'' call. The line is unmarshaled into an ``OpenFile''
 // only if is splittable by " " into a slice of at least 9 items. "line" should
 // not end with a "\n" delimitator, otherwise it will end up in the last
 // unmarshaled item.
@@ -80,7 +80,7 @@ func ParseOutput(r io.Reader) ([]ONF, error) {
 // "line" examples:
 // "postgres    676 danielmorandini   10u  IPv6 0x25c5bf0997ca88e3      0t0  UDP [::1]:60051->[::1]:60051"
 // "Dropbox     614 danielmorandini  247u  IPv4 0x25c5bf09a393d583      0t0  TCP 192.168.0.61:58282->162.125.18.133:https (ESTABLISHED)"
-func ParseONF(line string) (*ONF, error) {
+func ParseOpenFile(line string) (*OpenFile, error) {
 	chunks, err := internal.ChunkLine(line, " ", 9)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func ParseONF(line string) (*ONF, error) {
 		return nil, fmt.Errorf("error parsing pid: %w", err)
 	}
 
-	f := &ONF{
+	onf := &OpenFile{
 		Command: chunks[0],
 		Pid:     pid,
 		User:    chunks[2],
@@ -98,14 +98,17 @@ func ParseONF(line string) (*ONF, error) {
 		Type:    chunks[4],
 		Device:  chunks[5],
 	}
-	src, dst := ParseName(chunks[7], chunks[8])
-	f.SrcAddr = src
-	f.DstAddr = dst
+	src, dst, err := ParseName(chunks[7], chunks[8])
+	if err != nil {
+		return nil, fmt.Errorf("error parsing name: %w", err)
+	}
+	onf.SrcAddr = src
+	onf.DstAddr = dst
 	if len(chunks) >= 10 {
-		f.State = chunks[9]
+		onf.State = chunks[9]
 	}
 
-	return f, nil
+	return onf, nil
 }
 
 // ParseName parses `lsof`'s name field, which by default is in the form:
@@ -113,17 +116,23 @@ func ParseONF(line string) (*ONF, error) {
 // but we're disabling hostname conversion with the ``-n'' option
 // and port conversion with the ``-P'' option, so the output
 // in printed in the more decodable format: ``addr:port->addr:port''.
-func ParseName(node, name string) (net.Addr, net.Addr) {
+func ParseName(node, name string) (net.Addr, net.Addr, error) {
 	chunks := strings.Split(name, "->")
 	if len(chunks) == 0 {
-		return addr{}, addr{}
+		return nil, nil, fmt.Errorf("unable to split name by ->")
 	}
-	src := addr{net: strings.ToLower(node), addr: chunks[0]}
+	src, err := internal.ParseNetAddr(node, chunks[0])
+	if err != nil {
+		return nil, nil, err
+	}
 	if len(chunks) == 1 {
-		return src, addr{}
+		return src, addr{}, nil
 	}
-
-	return src, addr{net: strings.ToLower(node), addr: chunks[1]}
+	dst, err := internal.ParseNetAddr(node, chunks[1])
+	if err != nil {
+		return nil, nil, err
+	}
+	return src, dst, nil
 }
 
 // addr is a net.Addr implementation.

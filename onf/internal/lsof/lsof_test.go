@@ -19,27 +19,27 @@ import (
 	"testing"
 )
 
-func TestParseONF(t *testing.T) {
+func TestParseOpenFile(t *testing.T) {
 	t.Parallel()
 
 	line := "Spotify   11778 danielmorandini  128u  IPv4 0x25c5bf09993eff03      0t0  TCP 192.168.0.61:51291->35.186.224.47:443 (ESTABLISHED)"
-	onf, err := ParseONF(line)
+	of, err := ParseOpenFile(line)
 	if err != nil {
 		t.Fatalf("Unexpcted error: %v", err)
 	}
 
-	assert(t, "Spotify", onf.Command)
-	assert(t, 11778, onf.Pid)
-	assert(t, "danielmorandini", onf.User)
-	assert(t, "128u", onf.Fd)
-	assert(t, "IPv4", onf.Type)
-	assert(t, "0x25c5bf09993eff03", onf.Device)
-	assert(t, "192.168.0.61:51291", onf.SrcAddr.String())
-	assert(t, "35.186.224.47:443", onf.DstAddr.String())
-	assert(t, "(ESTABLISHED)", onf.State)
+	assert(t, "Spotify", of.Command)
+	assert(t, 11778, of.Pid)
+	assert(t, "danielmorandini", of.User)
+	assert(t, "128u", of.Fd)
+	assert(t, "IPv4", of.Type)
+	assert(t, "0x25c5bf09993eff03", of.Device)
+	assert(t, "192.168.0.61:51291", of.SrcAddr.String())
+	assert(t, "35.186.224.47:443", of.DstAddr.String())
+	assert(t, "(ESTABLISHED)", of.State)
 }
 
-func assert(t *testing.T, exp, x string) {
+func assert(t *testing.T, exp, x interface{}) {
 	if exp != x {
 		t.Fatalf("Assert failed: expected %v, found %v", exp, x)
 	}
@@ -73,22 +73,19 @@ func TestParseName(t *testing.T) {
 		dst  string
 		net  string
 	}{
-		{"TCP", "127.0.0.1:49161->127.0.01:9090", "127.0.0.1:49161", "127.0.01:9090", "tcp"},
+		{"TCP", "127.0.0.1:49161->127.0.01:9090", "127.0.0.1:49161", "127.0.0.1:9090", "tcp"},
 		{"TCP", "127.0.0.1:5432", "127.0.0.1:5432", "", "tcp"},
 		{"UDP", "192.168.0.61:50940->192.168.0.2:53", "192.168.0.61:50940", "192.168.0.2:53", "udp"},
 		{"TCP", "[fe80:c::d5d5:601e:981b:c79d]:1024->[fe80:c::f9b9:5ecb:eeca:58e9]:1024", "[fe80:c::d5d5:601e:981b:c79d]:1024", "[fe80:c::f9b9:5ecb:eeca:58e9]:1024", "tcp"},
 	}
 
-	for i, v := range tt {
-		src, dst := ParseName(v.node, v.name)
-		if src.String() != v.src {
-			t.Fatalf("%d: Unexpected src: wanted %s, found %s", i, v.src, src.String())
+	for _, v := range tt {
+		src, dst, err := ParseName(v.node, v.name)
+		if err != nil {
+			t.Fatal(err)
 		}
-		if dst.String() != v.dst {
-			t.Fatalf("%d: Unexpected dst: wanted %s, found %s", i, v.dst, dst.String())
-		}
-		if src.Network() != v.net {
-			t.Fatalf("%d: Unexpected net: wanted %s, found %s", i, v.net, src.Network())
-		}
+		assert(t, v.src, src.String())
+		assert(t, v.dst, dst.String())
+		assert(t, v.net, src.Network())
 	}
 }
