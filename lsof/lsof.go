@@ -15,6 +15,7 @@
 package lsof
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -24,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jecoz/lsaddr/onf/internal"
+	"github.com/jecoz/lsaddr/internal"
 	"gopkg.in/pipe.v2"
 )
 
@@ -60,16 +61,29 @@ func Run() ([]OpenFile, error) {
 // different from ``io.EOF''.
 func ParseOutput(r io.Reader) ([]OpenFile, error) {
 	set := []OpenFile{}
-	err := internal.ScanLines(r, func(line string) error {
-		onf, err := ParseOpenFile(line)
+	err := scanLines(r, func(line string) error {
+		of, err := ParseOpenFile(line)
 		if err != nil {
-			log.Printf("skipping onf \"%s\": %v", line, err)
+			log.Printf("skipping open file \"%s\": %v", line, err)
 			return nil
 		}
-		set = append(set, *onf)
+		set = append(set, *of)
 		return nil
 	})
 	return set, err
+}
+
+func scanLines(r io.Reader, f func(string) error) error {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		line := scanner.Text()
+		line = strings.Trim(line, "\n")
+		line = strings.Trim(line, "\r")
+		if err := f(line); err != nil {
+			return err
+		}
+	}
+	return scanner.Err()
 }
 
 // ParseOpenFile expectes "line" to be a single line output from
@@ -91,7 +105,7 @@ func ParseOpenFile(line string) (*OpenFile, error) {
 		return nil, fmt.Errorf("error parsing pid: %w", err)
 	}
 
-	onf := &OpenFile{
+	of := &OpenFile{
 		Raw:     line,
 		Command: chunks[0],
 		Pid:     pid,
@@ -104,13 +118,13 @@ func ParseOpenFile(line string) (*OpenFile, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error parsing name: %w", err)
 	}
-	onf.SrcAddr = src
-	onf.DstAddr = dst
+	of.SrcAddr = src
+	of.DstAddr = dst
 	if len(chunks) >= 10 {
-		onf.State = chunks[9]
+		of.State = chunks[9]
 	}
 
-	return onf, nil
+	return of, nil
 }
 
 // ParseName parses `lsof`'s name field, which by default is in the form:

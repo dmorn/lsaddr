@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jecoz/lsaddr/onf/internal"
+	"github.com/jecoz/lsaddr/internal"
 	"gopkg.in/pipe.v2"
 )
 
