@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var debug, raw bool
+var verbose bool
 var format string
 
 // rootCmd represents the base command when called without any subcommands
@@ -33,10 +33,10 @@ var rootCmd = &cobra.Command{
 	Use:   "lsaddr",
 	Short: "Show a subset of all network addresses being used by your apps",
 	Long:  usage,
-	Args:  cobra.MaximumNArgs(1),
+	Args:  cobra.ExactArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		log.SetPrefix("[lsaddr] ")
-		if !debug {
+		if !verbose {
 			log.SetOutput(ioutil.Discard)
 		}
 
@@ -79,9 +79,8 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "increment logger verbosity")
-	rootCmd.PersistentFlags().BoolVarP(&raw, "raw", "r", false, "increment logger verbosity")
-	rootCmd.PersistentFlags().StringVarP(&format, "format", "f", "csv", "choose format of output produced <csv|bpf>")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Increment logger verbosity.")
+	rootCmd.PersistentFlags().StringVarP(&format, "format", "f", "csv", "Choose output format.")
 }
 
 func validateFormat(format string) error {
@@ -94,14 +93,9 @@ func validateFormat(format string) error {
 }
 
 const usage = `
-'lsaddr' takes the entire list of open network files and filters it out
-using the argument provided, which can either be:
+'lsaddr'
 
-- "*.app" (macOS): It will be recognised as the path leading to the root directory of
-an Application. The tool will then:
-	1. Extract the Application's CFBundleExecutable value
-	2. Use it to find the list of Pids associated with the program
-	3. Build a regular expression out of them
+TODO: describe
 
 - a regular expression: which will be used to filter out the list of open files. Each line that
 does not match against the regex will be discarded (e.g. "chrome.exe", "Safari", "104|405").
