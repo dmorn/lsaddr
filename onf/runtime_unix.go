@@ -20,7 +20,7 @@ package onf
 import (
 	"time"
 
-	"github.com/jecoz/lsaddr/onf/internal/lsof"
+	"github.com/jecoz/lsaddr/lsof"
 )
 
 func fetchAll() ([]ONF, error) {

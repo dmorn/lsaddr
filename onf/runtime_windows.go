@@ -20,7 +20,7 @@ package onf
 import (
 	"time"
 
-	"github.com/jecoz/lsaddr/onf/internal/netstat"
+	"github.com/jecoz/lsaddr/netstat"
 )
 
 func fetchAll() ([]ONF, error) {

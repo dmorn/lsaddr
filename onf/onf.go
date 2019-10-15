@@ -17,7 +17,9 @@ package onf
 
 import (
 	"fmt"
+	"log"
 	"net"
+	"regexp"
 	"time"
 )
 
@@ -31,6 +33,10 @@ type ONF struct {
 	CreatedAt time.Time
 }
 
+func (f ONF) String() string {
+	return fmt.Sprintf("{Cmd: %s, Pid: %d, Conn: %v->%v}", f.Cmd, f.Pid, f.Src, f.Dst)
+}
+
 // FetchAll retrieves the complete list of open network files. It does
 // so using an external tool, `netstat` for windows and `lsof` for unix
 // based systems.
@@ -40,11 +46,26 @@ func FetchAll() ([]ONF, error) {
 	return fetchAll()
 }
 
+// Filter returns a filtered list of open network files removing the elements
+// that do not "match" with `pivot`. How the filtering changes depending on the
+// hosting operating system.
+// If an error occurs, it is returned together with the original list.
 func Filter(set []ONF, pivot string) ([]ONF, error) {
 	if pivot == "" || pivot == "*" {
 		return set, nil
 	}
-	acc := make([]ONF, 0, len(set))
-	return acc, fmt.Errorf("not implemented yet")
-}
 
+	rgx, err := regexp.Compile(pivot)
+	if err != nil {
+		return set, fmt.Errorf("unable to filter open network file set: %w", err)
+	}
+	acc := make([]ONF, 0, len(set))
+	for _, v := range set {
+		if !rgx.MatchString(v.Raw) {
+			log.Printf("[DEBUG] filtering open network file: %v", v)
+			continue
+		}
+		acc = append(acc, v)
+	}
+	return acc, nil
+}
