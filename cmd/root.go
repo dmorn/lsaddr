@@ -52,11 +52,15 @@ var rootCmd = &cobra.Command{
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
-		//fset, err := onf.Filter(set, s)
-		//if err != nil {
-		//	fmt.Fprintf(os.Stderr, "error: unable to filter with %s: %w\n", s, err")
-		//	os.Exit(1)
-		//}
+		pivot := "*"
+		if len(args) > 0 {
+			pivot = args[0]
+		}
+		set, err = onf.Filter(set, pivot)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: unable to filter with %s: %v\n", pivot, err)
+			os.Exit(1)
+		}
 
 		log.Printf("# of open network files: %d", len(set))
 		for _, v := range set {

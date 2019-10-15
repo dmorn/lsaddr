@@ -16,11 +16,12 @@
 package onf
 
 import (
+	"fmt"
 	"net"
 	"time"
 )
 
-// NetFile represents a network file.
+// ONF represents an open network file.
 type ONF struct {
 	Raw       string   // raw string that produced this result
 	Cmd       string   // command associated with Pid
@@ -29,3 +30,21 @@ type ONF struct {
 	Dst       net.Addr // destination address
 	CreatedAt time.Time
 }
+
+// FetchAll retrieves the complete list of open network files. It does
+// so using an external tool, `netstat` for windows and `lsof` for unix
+// based systems.
+func FetchAll() ([]ONF, error) {
+	// fetchAll implementations may be found insiede the
+	// runtime_*.go files.
+	return fetchAll()
+}
+
+func Filter(set []ONF, pivot string) ([]ONF, error) {
+	if pivot == "" || pivot == "*" {
+		return set, nil
+	}
+	acc := make([]ONF, 0, len(set))
+	return acc, fmt.Errorf("not implemented yet")
+}
+
