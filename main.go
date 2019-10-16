@@ -15,7 +15,7 @@
 
 package main
 
-import "github.com/booster-proj/lsaddr/cmd"
+import "github.com/jecoz/lsaddr/cmd"
 
 // Version and BuildTime are filled in during build by the Makefile
 var (

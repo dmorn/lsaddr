@@ -1,5 +1,4 @@
-// Copyright © 2019 booster authors
-//
+// Copyright © 2019 Jecoz
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -20,7 +19,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/booster-proj/lsaddr/lookup"
+	"github.com/jecoz/lsaddr/onf"
 )
 
 // Encoder returns an Encoder which encodes a list
@@ -37,7 +36,7 @@ func NewEncoder(w io.Writer) *Encoder {
 
 // Encode writes `l` into encoder's writer in CSV format. Some data may have been
 // written to the writer even upon error.
-func (e *Encoder) Encode(l []lookup.NetFile) error {
+func (e *Encoder) Encode(l []onf.ONF) error {
 	header := []string{"PID", "CMD", "NET", "SRC", "DST"}
 	if err := e.w.Write(header); err != nil {
 		return err

@@ -1,4 +1,4 @@
-// Copyright © 2019 booster authors
+// Copyright © 2019 Jecoz
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
@@ -23,53 +23,88 @@ import (
 	"os"
 	"strings"
 
-	"github.com/booster-proj/lsaddr/bpf"
-	"github.com/booster-proj/lsaddr/csv"
-	"github.com/booster-proj/lsaddr/lookup"
+	"github.com/jecoz/lsaddr/bpf"
+	"github.com/jecoz/lsaddr/csv"
+	"github.com/jecoz/lsaddr/onf"
 	"github.com/spf13/cobra"
 )
 
-var debug bool
-var output string
+// Build information.
+var (
+	Version   = "N/A"
+	Commit    = "N/A"
+	BuildTime = "N/A"
+)
+
+// Flags.
+var (
+	verbose bool
+	version bool
+	format  string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "lsaddr",
-	Short: "Show a subset of all network addresses being used by the system",
+	Short: "List used network addresses.",
 	Long:  usage,
 	Args:  cobra.MaximumNArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		log.SetPrefix("[lsaddr] ")
-		if !debug {
+		if !verbose {
 			log.SetOutput(ioutil.Discard)
-		}
-
-		output = strings.ToLower(output)
-		if err := validateOutput(output); err != nil {
-			fmt.Fprintf(os.Stderr, "%v\n", err)
-			os.Exit(1)
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		var s string
-		if len(args) > 0 {
-			s = args[0]
+		if version {
+			fmt.Printf("Version: %s, Commit: %s, Built at: %s\n\n", Version, Commit, BuildTime)
+			os.Exit(0)
 		}
-
-		ff, err := lookup.OpenNetFiles(s)
+		w := bufio.NewWriter(os.Stdout)
+		enc, err := newEncoder(w, format)
 		if err != nil {
-			fmt.Printf("unable to find open network files for %s: %v\n", s, err)
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
 			os.Exit(1)
 		}
-		log.Printf("# of open files: %d", len(ff))
 
-		w := bufio.NewWriter(os.Stdout)
-		if err := writeOutputTo(w, output, ff); err != nil {
-			fmt.Fprintf(os.Stderr, "unable to write output: %v", err)
+		set, err := onf.FetchAll()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
+		}
+		pivot := "*"
+		if len(args) > 0 {
+			pivot = args[0]
+		}
+		set, err = onf.Filter(set, pivot)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: unable to filter with %s: %v\n", pivot, err)
+			os.Exit(1)
+		}
+
+		log.Printf("# of open network files: %d", len(set))
+		if err := enc.Encode(set); err != nil {
+			fmt.Fprintf(os.Stderr, "error: unable to encode output: %v\n", err)
 			os.Exit(1)
 		}
 		w.Flush()
+		os.Exit(0)
 	},
+}
+
+type Encoder interface {
+	Encode([]onf.ONF) error
+}
+
+func newEncoder(w io.Writer, format string) (Encoder, error) {
+	switch strings.ToLower(format) {
+	case "csv":
+		return csv.NewEncoder(w), nil
+	case "bpf":
+		return bpf.NewEncoder(w), nil
+	default:
+		return nil, fmt.Errorf("unrecognised format option %s", format)
+	}
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -82,53 +117,14 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "", false, "increment logger verbosity")
-	rootCmd.PersistentFlags().StringVarP(&output, "out", "o", "csv", "choose type of output produced <csv|bpf>")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Increment logger verbosity.")
+	rootCmd.PersistentFlags().BoolVarP(&version, "version", "", false, "Print build information such as version, commit and build time.")
+	rootCmd.PersistentFlags().StringVarP(&format, "format", "f", "csv", "Choose output format.")
 }
 
-func writeOutputTo(w io.Writer, output string, ff []lookup.NetFile) error {
-	switch output {
-	case "csv":
-		return csv.NewEncoder(w).Encode(ff)
-	case "bpf":
-		var expr bpf.Expr
-		for _, v := range ff {
-			src := string(bpf.FromAddr(bpf.NODIR, v.Src).Wrap())
-			dst := string(bpf.FromAddr(bpf.NODIR, v.Dst).Wrap())
-			expr = expr.Or(src).Or(dst)
-		}
-		_, err := io.Copy(w, expr.NewReader())
-		return err
-	}
-	return nil
-}
+const usage = `List open network connections. Results can be filtered passing a raw regular expression as argument (check out https://golang.org/pkg/regexp/ to learn how to properly format your regex).
 
-func validateOutput(output string) error {
-	switch output {
-	case "csv", "bpf":
-		return nil
-	default:
-		return fmt.Errorf("unrecognised output %s", output)
-	}
-}
-
-const usage = `
-'lsaddr' takes the entire list of currently open network connections and filters it out
-using the argument provided, which can either be:
-
-- "*.app" (macOS): It will be recognised as the path leading to the root directory of
-an Application. The tool will then:
-	1. Extract the Application's CFBundleExecutable value
-	2. Use it to find the list of Pids associated with the program
-	3. Build a regular expression out of them
-
-- a regular expression: which will be used to filter out the list of open files. Each line that
-does not match against the regex will be discarded. On macOS, the list of open files is fetched
-using 'lsof -i -n -P'.
-Check out https://golang.org/pkg/regexp/ to learn how to properly format your regex.
-
-It is possible to configure with the '-out' flag which output 'lsaddr' will produce. Possible
-values are:
+Using the "--format" or "-f" flag, it is possible to decide the format/encoding of the output produced. Possible values are:
 - "bpf": produces a Berkley Packet Filter expression, which, if given to a tool that supports
 bpfs, will make it capture only the packets headed to/coming from the destination addresses
 of the open network files collected.

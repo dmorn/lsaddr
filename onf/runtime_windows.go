@@ -1,4 +1,4 @@
-// Copyright © 2019 booster authors
+// Copyright © 2019 Jecoz
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -13,29 +13,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package cmd
+// +build windows
+
+package onf
 
 import (
-	"fmt"
+	"time"
 
-	"github.com/spf13/cobra"
+	"github.com/jecoz/lsaddr/netstat"
 )
 
-var (
-	Version   = "N/A"
-	Commit    = "N/A"
-	BuildTime = "N/A"
-)
-
-// versionCmd represents the version command
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "print version information",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("Version: %s, Commit: %s, Built at: %s\n\n", Version, Commit, BuildTime)
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(versionCmd)
+func fetchAll() ([]ONF, error) {
+	set, err := netstat.Run()
+	if err != nil {
+		return []ONF{}, err
+	}
+	mapped := make([]ONF, len(set))
+	for i, v := range set {
+		mapped[i] = ONF{
+			Raw:       v.Raw,
+			Pid:       v.Pid,
+			Src:       v.SrcAddr,
+			Dst:       v.DstAddr,
+			CreatedAt: time.Now(),
+		}
+	}
+	return mapped, nil
 }

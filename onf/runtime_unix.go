@@ -1,6 +1,4 @@
-// +build windows
-
-// Copyright © 2019 booster authors
+// Copyright © 2019 Jecoz
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Affero General Public License as published by
@@ -15,14 +13,31 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-package internal
+// +build !windows
+
+package onf
 
 import (
-	"gopkg.in/pipe.v2"
+	"time"
+
+	"github.com/jecoz/lsaddr/lsof"
 )
 
-var runtime = Runtime{
-	OFCmd:             pipe.Exec("netstat", "-ano"),
-	OFDecoder:         DecodeNetstatOutput,
-	PrepareNFExprFunc: prepareNFExprWin,
+func fetchAll() ([]ONF, error) {
+	set, err := lsof.Run()
+	if err != nil {
+		return []ONF{}, err
+	}
+	mapped := make([]ONF, len(set))
+	for i, v := range set {
+		mapped[i] = ONF{
+			Raw:       v.Raw,
+			Cmd:       v.Command,
+			Pid:       v.Pid,
+			Src:       v.SrcAddr,
+			Dst:       v.DstAddr,
+			CreatedAt: time.Now(),
+		}
+	}
+	return mapped, nil
 }
