@@ -25,15 +25,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var verbose bool
-var format string
+// Build information.
+var (
+	Version   = "N/A"
+	Commit    = "N/A"
+	BuildTime = "N/A"
+)
+
+// Flags.
+var (
+	verbose bool
+	version bool
+	format string
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "lsaddr",
 	Short: "Show a subset of all network addresses being used by your apps",
 	Long:  usage,
-	Args:  cobra.ExactArgs(1),
+	Args:  cobra.MaximumNArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		log.SetPrefix("[lsaddr] ")
 		if !verbose {
@@ -47,6 +58,11 @@ var rootCmd = &cobra.Command{
 		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		if version {
+			fmt.Printf("Version: %s, Commit: %s, Built at: %s\n\n", Version, Commit, BuildTime)
+			os.Exit(0)
+		}
+
 		set, err := onf.FetchAll()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error: %v\n", err)
@@ -66,6 +82,7 @@ var rootCmd = &cobra.Command{
 		for _, v := range set {
 			fmt.Printf("%v\n", v)
 		}
+		os.Exit(0)
 	},
 }
 
@@ -80,6 +97,7 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Increment logger verbosity.")
+	rootCmd.PersistentFlags().BoolVarP(&version, "version", "", false, "Print build information such as version, commit and build time.")
 	rootCmd.PersistentFlags().StringVarP(&format, "format", "f", "csv", "Choose output format.")
 }
 
