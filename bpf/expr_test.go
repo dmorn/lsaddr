@@ -18,7 +18,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/booster-proj/lsaddr/bpf"
+	"github.com/jecoz/lsaddr/bpf"
 )
 
 func TestJoin(t *testing.T) {
