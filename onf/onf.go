@@ -46,9 +46,8 @@ func FetchAll() ([]ONF, error) {
 	return fetchAll()
 }
 
-// Filter returns a filtered list of open network files removing the elements
-// that do not "match" with `pivot`. How the filtering changes depending on the
-// hosting operating system.
+// Filter takes `pivot` and creates a compiled regex out of it. It then uses
+// it to filter `set`, removing every open network file that do not match.
 // If an error occurs, it is returned together with the original list.
 func Filter(set []ONF, pivot string) ([]ONF, error) {
 	if pivot == "" || pivot == "*" {
