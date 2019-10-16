@@ -15,12 +15,16 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 
+	"github.com/jecoz/lsaddr/bpf"
+	"github.com/jecoz/lsaddr/csv"
 	"github.com/jecoz/lsaddr/onf"
 	"github.com/spf13/cobra"
 )
@@ -50,17 +54,17 @@ var rootCmd = &cobra.Command{
 		if !verbose {
 			log.SetOutput(ioutil.Discard)
 		}
-
-		format = strings.ToLower(format)
-		if err := validateFormat(format); err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-			os.Exit(1)
-		}
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if version {
 			fmt.Printf("Version: %s, Commit: %s, Built at: %s\n\n", Version, Commit, BuildTime)
 			os.Exit(0)
+		}
+		w := bufio.NewWriter(os.Stdout)
+		enc, err := newEncoder(w, format)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
 		}
 
 		set, err := onf.FetchAll()
@@ -79,11 +83,28 @@ var rootCmd = &cobra.Command{
 		}
 
 		log.Printf("# of open network files: %d", len(set))
-		for _, v := range set {
-			fmt.Printf("%v\n", v)
+		if err := enc.Encode(set); err != nil {
+			fmt.Fprintf(os.Stderr, "error: unable to encode output: %v\n", err)
+			os.Exit(1)
 		}
+		w.Flush()
 		os.Exit(0)
 	},
+}
+
+type Encoder interface {
+	Encode([]onf.ONF) error
+}
+
+func newEncoder(w io.Writer, format string) (Encoder, error) {
+	switch strings.ToLower(format) {
+	case "csv":
+		return csv.NewEncoder(w), nil
+	case "bpf":
+		return bpf.NewEncoder(w), nil
+	default:
+		return nil, fmt.Errorf("unrecognised format option %s", format)
+	}
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -99,15 +120,6 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Increment logger verbosity.")
 	rootCmd.PersistentFlags().BoolVarP(&version, "version", "", false, "Print build information such as version, commit and build time.")
 	rootCmd.PersistentFlags().StringVarP(&format, "format", "f", "csv", "Choose output format.")
-}
-
-func validateFormat(format string) error {
-	switch format {
-	case "csv", "bpf":
-		return nil
-	default:
-		return fmt.Errorf("unrecognised format option %s", format)
-	}
 }
 
 const usage = `
