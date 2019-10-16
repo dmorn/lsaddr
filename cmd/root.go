@@ -46,7 +46,7 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "lsaddr",
-	Short: "Show a subset of all network addresses being used by your apps",
+	Short: "List used network addresses.",
 	Long:  usage,
 	Args:  cobra.MaximumNArgs(1),
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
@@ -122,17 +122,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&format, "format", "f", "csv", "Choose output format.")
 }
 
-const usage = `
-'lsaddr'
+const usage = `List open network connections. Results can be filtered passing a raw regular expression as argument (check out https://golang.org/pkg/regexp/ to learn how to properly format your regex).
 
-TODO: describe
-
-- a regular expression: which will be used to filter out the list of open files. Each line that
-does not match against the regex will be discarded (e.g. "chrome.exe", "Safari", "104|405").
-Check out https://golang.org/pkg/regexp/ to learn how to properly format your regex.
-
-Using the "--format" or "-f" flag, it is possible to decide the format/encoding of the output
-produced. Possible values are:
+Using the "--format" or "-f" flag, it is possible to decide the format/encoding of the output produced. Possible values are:
 - "bpf": produces a Berkley Packet Filter expression, which, if given to a tool that supports
 bpfs, will make it capture only the packets headed to/coming from the destination addresses
 of the open network files collected.
