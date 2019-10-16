@@ -36,7 +36,7 @@ var (
 var (
 	verbose bool
 	version bool
-	format string
+	format  string
 )
 
 // rootCmd represents the base command when called without any subcommands
