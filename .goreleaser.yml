@@ -4,7 +4,7 @@
 release:
   github:
     owner: jecoz
-    jecoz
+    name: lsaddr
 env:
   - GO111MODULE=on
 before:
