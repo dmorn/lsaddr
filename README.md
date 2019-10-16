@@ -9,7 +9,7 @@
 #### Supported OS
 - `macOS`
 - `linux`
-- `windows
+- `windows`
 
 #### External dependencies
 OS | Dep | Notes
