@@ -3,8 +3,8 @@
 
 release:
   github:
-    owner: booster-proj
-    name: lsaddr
+    owner: jecoz
+    jecoz
 env:
   - GO111MODULE=on
 before:
