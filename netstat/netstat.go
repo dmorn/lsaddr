@@ -37,8 +37,10 @@ type ActiveConnection struct {
 }
 
 func Run() ([]ActiveConnection, error) {
-	acc := []ActiveConnection{}
+	log.Printf("Executing: netstat -nao")
 	p := pipe.Exec("netstat", "-nao")
+
+	acc := []ActiveConnection{}
 	out, err := pipe.OutputTimeout(p, time.Millisecond*100)
 	if err != nil {
 		return acc, fmt.Errorf("unable to run netstat: %w", err)

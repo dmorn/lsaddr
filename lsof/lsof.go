@@ -43,8 +43,10 @@ type OpenFile struct {
 }
 
 func Run() ([]OpenFile, error) {
-	acc := []OpenFile{}
+	log.Printf("Executing: lsof -i -n -P")
 	p := pipe.Exec("lsof", "-i", "-n", "-P")
+
+	acc := []OpenFile{}
 	out, err := pipe.OutputTimeout(p, time.Millisecond*100)
 	if err != nil {
 		return acc, fmt.Errorf("unable to run lsof: %w", err)

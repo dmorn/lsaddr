@@ -54,6 +54,7 @@ func Filter(set []ONF, pivot string) ([]ONF, error) {
 		return set, nil
 	}
 
+	log.Printf("Building regex from: %v", pivot)
 	rgx, err := regexp.Compile(pivot)
 	if err != nil {
 		return set, fmt.Errorf("unable to filter open network file set: %w", err)
@@ -61,7 +62,7 @@ func Filter(set []ONF, pivot string) ([]ONF, error) {
 	acc := make([]ONF, 0, len(set))
 	for _, v := range set {
 		if !rgx.MatchString(v.Raw) {
-			log.Printf("[DEBUG] filtering open network file: %v", v)
+			log.Printf("Filtering open network file: %v", v)
 			continue
 		}
 		acc = append(acc, v)
