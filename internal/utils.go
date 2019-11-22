@@ -53,14 +53,24 @@ func ScanLines(r io.Reader, f func(string) error) error {
 	return scanner.Err()
 }
 
+type uncheckedAddr struct {
+	net, addr string
+}
+
+func (a uncheckedAddr) Network() string { return a.net }
+func (a uncheckedAddr) String() string  { return a.addr }
+
 func ParseNetAddr(network, addr string) (net.Addr, error) {
 	network = strings.ToLower(network)
-	switch {
-	case strings.Contains(network, "tcp"):
-		return net.ResolveTCPAddr(network, addr)
-	case strings.Contains(network, "udp"):
-		return net.ResolveUDPAddr(network, addr)
-	default:
-		return nil, fmt.Errorf("unsupported network %v", network)
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, err
 	}
+	if ip := net.ParseIP(host); ip == nil {
+		return nil, fmt.Errorf("%v is not a valid ip address", host)
+	}
+	return uncheckedAddr{
+		net:  network,
+		addr: addr,
+	}, nil
 }
